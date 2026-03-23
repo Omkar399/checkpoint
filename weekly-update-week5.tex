@@ -1,0 +1,128 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{booktabs}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+
+\begin{document}
+
+% ============================================================
+% HEADER
+% ============================================================
+\begin{center}
+    {\LARGE \textbf{Weekly Update --- Week 5}} \\[6pt]
+    {\large CS161 --- Spring 2026}
+\end{center}
+
+\vspace{0.5em}
+
+% ============================================================
+% 1. Team Information
+% ============================================================
+\section{Team Information}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+    \textbf{Team Name:}       & Checkpoint (Team 2) \\
+    \textbf{Team Members:}    & Omkar Podey, Anmol Rastogi \\
+    \textbf{Team Leader:}     & Omkar Podey \\
+    \textbf{Date of Submission:} & March 1, 2026 \\
+\end{tabularx}
+
+% ============================================================
+% 2. Overall Team Objectives Completed
+% ============================================================
+\section{Overall Team Objectives Completed}
+
+During Week~5, the team completed the following major objectives toward Sprint~1 (Foundation \& Infrastructure):
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Product Requirements Document (PRD) finalized} --- Defined target personas, success metrics, all feature requirements, user flows, non-functional requirements, and scope constraints for the Checkpoint platform.
+
+    \item \textbf{Sprint Plan created} --- Broke the project into three incremental sprints with user stories, technical tasks, deliverables, definitions of done, and a risk-mitigation matrix.
+
+    \item \textbf{Technical architecture designed} --- Selected the tech stack (FastAPI + SQLAlchemy/SQLite for backend, React + Vite for frontend), designed the database schema (7~tables), defined the REST API surface under \texttt{/api/v1}, and planned the WebSocket layer with polling fallback.
+
+    \item \textbf{Backend scaffolding and core implementation completed} --- Implemented the full backend structure including:
+    \begin{itemize}[leftmargin=1.5em]
+        \item Database models: User, Server, Channel, Message, Membership, Invite, ChannelMember.
+        \item Routers: Auth, Servers, Channels, Messages, Invites, WebSocket.
+        \item Service layer: Auth, Server, Channel, Message, Invite services.
+        \item Pydantic schemas for request/response validation.
+        \item WebSocket connection manager for real-time messaging.
+        \item JWT-based authentication with secure password hashing.
+    \end{itemize}
+
+    \item \textbf{Frontend scaffolding and core UI completed} --- Built the full frontend component hierarchy:
+    \begin{itemize}[leftmargin=1.5em]
+        \item Auth components: Login form, Register form, Protected routes.
+        \item Layout: Server sidebar, Channel list panel.
+        \item Messaging: Message bubble, Message feed, Message input.
+        \item Server management: Create server modal, Invite code modal, Server icon.
+        \item Reusable UI: Button, Input, Loading spinner, Modal.
+        \item Pages: Login, Register, Dashboard, Channel, Join Server.
+        \item API layer: Axios client with auth, server, channel, message, and invite modules.
+        \item Auth context and WebSocket hook for real-time updates.
+    \end{itemize}
+\end{enumerate}
+
+% ============================================================
+% 3. Individual Contributions
+% ============================================================
+\section{Individual Contributions}
+
+\subsection{Omkar Podey}
+\begin{itemize}[leftmargin=1.5em]
+    \item Authored the Product Requirements Document (PRD).
+    \item Designed the technical architecture and database schema.
+    \item Implemented backend models, routers, services, and schemas for auth, servers, channels, messages, and invites.
+    \item Set up the FastAPI project structure with SQLAlchemy ORM and SQLite.
+    \item Implemented the WebSocket connection manager and real-time messaging endpoint.
+    \item Configured JWT-based authentication flow.
+\end{itemize}
+
+\subsection{Anmol Rastogi}
+\begin{itemize}[leftmargin=1.5em]
+    \item Co-authored the Sprint Plan with user stories and task breakdowns.
+    \item Built the React frontend scaffolding with Vite.
+    \item Implemented authentication UI (Login, Register forms) and Protected Route component.
+    \item Built the layout components (Sidebar, Channel list).
+    \item Developed the messaging UI (Message bubble, feed, and input components).
+    \item Created server management modals (Create Server, Invite Code).
+    \item Implemented the API client layer and Auth context provider.
+\end{itemize}
+
+% ============================================================
+% 4. Scrum Meetings
+% ============================================================
+\section{Scrum Meetings}
+
+A total of \textbf{4 scrum meetings} were held during Week~5:
+
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{2 in-class meetings} --- Used class time for sprint planning, task assignment, and architecture review.
+    \item \textbf{2 outside-of-class meetings} --- Held virtually to coordinate on implementation progress, resolve integration questions between frontend and backend, and perform code review.
+\end{itemize}
+
+% ============================================================
+% 5. Roadblocks / Blocking Issues
+% ============================================================
+\section{Roadblocks \& Blocking Issues}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{WebSocket reliability on campus Wi-Fi} --- Initial testing showed occasional WebSocket disconnections on the university network. \textit{Mitigation:} Implementing a 10-second polling fallback as planned in the architecture.
+
+    \item \textbf{Frontend--Backend integration testing} --- End-to-end integration between the React frontend and FastAPI backend has not yet been fully validated. CORS configuration and WebSocket token passing still need to be verified. \textit{Mitigation:} Scheduled as the next priority task.
+
+    \item \textbf{No major blocking issues at this time} --- Development is on track for Sprint~1 completion. All user stories are in progress or completed.
+\end{enumerate}
+
+\end{document}
