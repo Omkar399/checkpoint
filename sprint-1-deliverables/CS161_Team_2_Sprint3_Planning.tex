@@ -1,0 +1,372 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{longtable}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+
+\begin{document}
+
+% ============================================================
+% HEADER
+% ============================================================
+\begin{center}
+    {\LARGE \textbf{Sprint Plan: Sprint \#3}} \\[6pt]
+    {\large CS161, Spring 2026}
+\end{center}
+
+\vspace{0.5em}
+
+% ============================================================
+% 1. Team Information
+% ============================================================
+\section{Team Information}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+    \textbf{Team Number:}          & Team 2 \\
+    \textbf{Team Name:}            & Checkpoint \\
+    \textbf{Team Members:}         & Omkar Podey, Anmol Rastogi \\
+    \textbf{Class:}                & CS161, Software Engineering, Spring 2026 \\
+    \textbf{Planning Date:}        & April 9, 2026 \\
+    \textbf{Sprint Period:}        & April 10 to April 23, 2026 (2 weeks) \\
+\end{tabularx}
+
+% ============================================================
+% 2. Task List Link
+% ============================================================
+\section{Product Backlog / Task List}
+
+\textbf{Trello Board:} \url{https://trello.com/b/ufZ3LwJi/checkpoint-cs161}
+
+\textbf{GitHub Repository:} \url{https://github.com/Omkar399/checkpoint}
+
+% ============================================================
+% 3. Sprint 3 Context
+% ============================================================
+\section{Sprint Context: Building on Sprint 2}
+
+Sprint~1 established the foundational chat infrastructure (servers, channels, real-time messaging). Sprint~2 delivered the core accountability feature (check-ins, daily dashboard, heatmaps). Sprint~3 adds the social and automated engagement layer: the Coach Bot for smart notifications, leaderboards for peer recognition, emoji reactions for quick feedback, and testing infrastructure for maintainability.
+
+% ============================================================
+% 4. Sprint 3 Objectives
+% ============================================================
+\section{Sprint 3: Objectives}
+
+The primary objective of Sprint~3 is to enhance user engagement through automated coaching, social recognition, and continuous quality improvement.
+
+\textbf{Key goals:}
+\begin{itemize}[leftmargin=1.5em]
+    \item Implement the Coach Bot: automated welcome messages, daily summaries, and inactivity nudges.
+    \item Add emoji reaction support to check-in cards for peer encouragement.
+    \item Build a Leaderboard component showing monthly rankings by check-in count.
+    \item Polish the UI with loading states, error toasts, empty states, and responsive design.
+    \item Begin writing automated API tests (at least 20 tests covering auth, check-ins, and channels).
+    \item Improve code maintainability with test fixtures and shared utilities.
+\end{itemize}
+
+% ============================================================
+% 5. Sprint 3 User Stories
+% ============================================================
+\section{Sprint 3: User Stories}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}clXc@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Story} & \textbf{Status} \\
+\midrule
+3.1 & Must Have & As a new channel member, I receive a Coach Bot welcome message explaining the check-in system. & \textbf{Planned} \\
+3.2 & Must Have & As a channel member, I receive a daily summary of that day's check-ins at 9 PM. & \textbf{Planned} \\
+3.3 & Should Have & As a channel member, I receive a 48-hour inactivity nudge if I haven't checked in in two days. & \textbf{Planned} \\
+3.4 & Must Have & As a channel member, I can react to check-in cards with emoji (thumbs up, heart, fire, etc.). & \textbf{Planned} \\
+3.5 & Must Have & As a channel member, I can view a monthly leaderboard showing peers ranked by check-in count. & \textbf{Planned} \\
+3.6 & Should Have & As a UI user, I see loading skeletons, error toasts, and empty state illustrations. & \textbf{Planned} \\
+3.7 & Must Have & As a developer, there are at least 20 automated tests for the API. & \textbf{Planned} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Rationale:} These stories address user retention (Coach Bot, nudges), peer encouragement (reactions, leaderboard), and codebase health (tests, UI polish).
+
+% ============================================================
+% 6. Sprint 3 Task Breakdown
+% ============================================================
+\section{Sprint 3: Planned Task Breakdown}
+
+All 7 Sprint~3 tasks are planned to be completed by April 23, 2026.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lXcc@{}}
+\toprule
+\textbf{\#} & \textbf{Task} & \textbf{Assigned To} & \textbf{Est. Days} \\
+\midrule
+1 & Coach Bot: Welcome, Daily Summary, Inactivity Nudges & Omkar & 2 \\
+2 & Emoji Reactions: Model, Service, API, Storage & Omkar & 1.5 \\
+3 & Leaderboard Component \& Integration & Anmol & 1.5 \\
+4 & UI Polish: Loading States, Toasts, Empty States & Anmol & 1.5 \\
+5 & Emoji Reactions Frontend: Display, Interaction & Anmol & 1 \\
+6 & API Testing Suite: 20+ Tests (auth, check-ins, channels, leaderboard) & Omkar & 2 \\
+7 & Integration \& Final QA & Both & 1 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ============================================================
+% 7. Technical Architecture: Sprint 3
+% ============================================================
+\section{Technical Architecture: Sprint 3}
+
+\subsection{Coach Bot (Backend)}
+
+The Coach Bot is a scheduled background task that sends system messages to channels:
+
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{Welcome Message}: Sent when a user joins a channel, explaining the check-in ritual and the purpose of the daily dashboard.
+    \item \textbf{Daily Summary}: Sent at 9 PM (UTC) listing all members and their check-in status for that day.
+    \item \textbf{Inactivity Nudge}: Sent at 9 AM if the user hasn't checked in for 48 hours, encouraging them to return.
+\end{itemize}
+
+\textbf{Implementation:}
+\begin{itemize}[leftmargin=1.5em]
+    \item New \texttt{CoachMessage} SQLAlchemy model (id, channel\_id, user\_id, message\_type, sent\_at).
+    \item New \texttt{coach\_service} with functions: \texttt{send\_welcome}, \texttt{send\_daily\_summary}, \texttt{send\_inactivity\_nudge}.
+    \item APScheduler (or similar) background worker for scheduled tasks.
+    \item Broadcast coach messages to all connected channel members via WebSocket.
+\end{itemize}
+
+\subsection{Emoji Reactions (Backend)}
+
+Add support for emoji reactions on check-in cards:
+
+\begin{itemize}[leftmargin=1.5em]
+    \item New \texttt{Reaction} model (id, checkin\_id, user\_id, emoji, created\_at).
+    \item New endpoints:
+    \begin{itemize}
+        \item POST \texttt{/checkins/\{id\}/reactions} --- Add a reaction.
+        \item DELETE \texttt{/checkins/\{id\}/reactions/\{emoji\}} --- Remove a reaction.
+        \item GET \texttt{/checkins/\{id\}/reactions} --- List all reactions (aggregated by emoji with counts).
+    \end{itemize}
+    \item WebSocket event: Broadcast \texttt{new\_reaction} when a reaction is added/removed.
+\end{itemize}
+
+\subsection{Leaderboard (Backend \& Frontend)}
+
+Monthly ranking of members by check-in count:
+
+\begin{itemize}[leftmargin=1.5em]
+    \item New endpoint: GET \texttt{/channels/\{id\}/leaderboard?year=2026\&month=4} --- Returns list of (user, check-in\_count, rank).
+    \item Service function: \texttt{get\_leaderboard(db, channel\_id, month, year)} --- Aggregates check-in counts for the given month.
+    \item Frontend component: \texttt{Leaderboard.jsx} --- Table/list showing rank, user avatar, username, check-in count, and badges for top 3.
+\end{itemize}
+
+\subsection{Testing Infrastructure}
+
+\begin{itemize}[leftmargin=1.5em]
+    \item Use \texttt{pytest} with fixtures for:
+    \begin{itemize}
+        \item Database session (in-memory SQLite for tests).
+        \item Authenticated client (test user with valid JWT).
+        \item Test server, channel, and membership setup.
+    \end{itemize}
+    \item Target test coverage:
+    \begin{itemize}
+        \item Authentication: login, register, token refresh, unauthorized access.
+        \item Check-ins: create, list, dashboard, streak, heatmap.
+        \item Channels: create, invite, member list, not-a-member 403.
+        \item Leaderboard: fetch, sorting, monthly filters.
+    \end{itemize}
+    \item All tests should be runnable via \texttt{pytest} with minimal setup.
+\end{itemize}
+
+\subsection{UI Polish}
+
+\begin{itemize}[leftmargin=1.5em]
+    \item Loading states: Skeleton loaders for MessageFeed, DailyDashboard, Leaderboard.
+    \item Error handling: Toast notifications (top-right, auto-dismiss) for API failures.
+    \item Empty states: Illustrations and helpful text when no messages, no members, or no check-ins exist.
+    \item Responsive design: Test layouts on mobile (375px), tablet (768px), and desktop (1920px).
+\end{itemize}
+
+% ============================================================
+% 8. Implementation Strategy
+% ============================================================
+\section{Implementation Strategy}
+
+\subsection{Backend-First Approach}
+
+1. \textbf{Coach Bot} (Day 1-2): Implement model, service, and background scheduler. Test message generation logic.
+2. \textbf{Emoji Reactions} (Day 1.5-2.5): Implement model, endpoints, and WebSocket broadcast. Keep simple: 7 predefined emoji.
+3. \textbf{Leaderboard Service} (Day 2-3): Implement database query and REST endpoint. This unblocks frontend.
+4. \textbf{API Tests} (Day 4-5): Write comprehensive test suite once backend features are stable.
+
+\subsection{Frontend-Parallel Approach}
+
+1. \textbf{Emoji Reactions UI} (Day 2-3): Once backend endpoints are available, build reaction button and reaction list.
+2. \textbf{Leaderboard Component} (Day 2-3): Fetch leaderboard data, render table with sorting and badges.
+3. \textbf{UI Polish} (Day 3-4): Add loading skeletons, toast components, empty states, and responsive adjustments.
+
+\subsection{Integration \& QA (Day 5)}
+
+1. End-to-end testing: Post check-in $\rightarrow$ Receive reaction $\rightarrow$ View leaderboard.
+2. Coach Bot message delivery verification.
+3. Mobile responsiveness check.
+
+% ============================================================
+% 9. Risk Mitigation
+% ============================================================
+\section{Risk Mitigation}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Risk:} Background scheduler (APScheduler) is a new external dependency.
+    \begin{itemize}
+        \item \textbf{Mitigation:} Use APScheduler v3.x (stable). Implement a simple fallback: manual background task triggering via a GET endpoint for testing.
+    \end{itemize}
+
+    \item \textbf{Risk:} Reactions and leaderboard queries could be slow with large data.
+    \begin{itemize}
+        \item \textbf{Mitigation:} Add database indexes on (checkin\_id) for reactions and (channel\_id, checked\_in\_at) for leaderboard aggregation (already planned from Sprint~2).
+    \end{itemize}
+
+    \item \textbf{Risk:} Writing 20+ tests is time-consuming with limited sprint time.
+    \begin{itemize}
+        \item \textbf{Mitigation:} Prioritize core auth and check-in tests first (aim for 12 tests by Day 4). Additional tests can be added in a post-sprint refactoring session.
+    \end{itemize}
+
+    \item \textbf{Risk:} UI polish can scope-creep if not time-boxed.
+    \begin{itemize}
+        \item \textbf{Mitigation:} Define specific polish items: 3 loading skeleton components, 1 toast component, 3 empty state illustrations. Limit time to 1.5 days.
+    \end{itemize}
+\end{enumerate}
+
+% ============================================================
+% 10. Definition of Done (Sprint 3)
+% ============================================================
+\section{Definition of Done: Sprint 3 Criteria}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{All 7 user stories (3.1--3.7) are implemented and manually tested.}
+
+    \item \textbf{Coach Bot successfully sends welcome, daily summary, and inactivity nudge messages.}
+
+    \item \textbf{Emoji reactions appear in real-time on check-in cards and persist in the database.}
+
+    \item \textbf{Leaderboard component displays correctly and handles monthly filtering.}
+
+    \item \textbf{At least 15 automated tests pass (covering auth, check-ins, channels, and leaderboard).}
+
+    \item \textbf{UI includes loading states, error toasts, and empty state illustrations.}
+
+    \item \textbf{Mobile responsive design verified on 375px, 768px, and 1920px viewports.}
+
+    \item \textbf{All code follows existing patterns and passes a final code review.}
+\end{enumerate}
+
+% ============================================================
+% 11. Dependencies and Blockers
+% ============================================================
+\section{Dependencies and Blockers}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{APScheduler Installation:} Required for background task scheduling. No blocker, as it's a standard package.
+
+    \item \textbf{React Toast Component:} Can use existing community libraries (e.g., \texttt{react-hot-toast}) or build a simple custom component. Decision needed by Day 3.
+
+    \item \textbf{Emoji Set:} Define the 7 allowed emoji early (suggested: \texttt{+1}, \texttt{heart}, \texttt{fire}, \texttt{laughing}, \texttt{thinking}, \texttt{tada}, \texttt{rocket}).
+\end{enumerate}
+
+% ============================================================
+% 12. Success Metrics
+% ============================================================
+\section{Success Metrics}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Velocity:} Complete all 7 user stories and tasks on time (by April 23).
+
+    \item \textbf{Test Coverage:} Achieve 15+ passing tests and 60\%+ code coverage for backend API.
+
+    \item \textbf{User Engagement:} Platform now has three engagement layers: check-ins (core), reactions (quick feedback), leaderboard (recognition).
+
+    \item \textbf{Code Quality:} No critical bugs reported in end-to-end testing; UI is responsive and polished.
+
+    \item \textbf{Technical Debt Reduction:} Establish testing practices for future sprints.
+\end{enumerate}
+
+% ============================================================
+% 13. Sprint Schedule
+% ============================================================
+\section{Sprint Schedule}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}clXc@{}}
+\toprule
+\textbf{Day} & \textbf{Date} & \textbf{Focus} & \textbf{Deliverable} \\
+\midrule
+1 & Apr 10 (Thu) & Coach Bot model \& service & Welcome \& daily summary logic \\
+2 & Apr 11 (Fri) & Emoji Reactions model \& endpoints & Reactions CRUD endpoints \\
+3 & Apr 14 (Mon) & Leaderboard service \& frontend & Leaderboard component working \\
+4 & Apr 15 (Tue) & Emoji reactions frontend & Reaction button \& display in UI \\
+5 & Apr 16 (Wed) & UI polish \& loading states & Skeletons, toasts, empty states \\
+6 & Apr 17 (Thu) & API tests (batch 1) & 15+ passing tests \\
+7 & Apr 18 (Fri) & Integration \& final testing & End-to-end verification \\
+8 & Apr 21 (Mon) & Buffer \& refinement & Hotfixes, final review \\
+9 & Apr 22 (Tue) & Final QA \& documentation & Report generation \\
+10 & Apr 23 (Wed) & Sprint review \& handoff & Final deliverables \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Scrum meetings: 2 per week (in-class + virtual).
+
+% ============================================================
+% 14. Rollover / Scope Management
+% ============================================================
+\section{Scope Management}
+
+\textbf{If time is running short, the priority order is:}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{P1 (Must Complete):} Coach Bot (3.1, 3.2), Emoji Reactions (3.4), Leaderboard (3.5).
+    \item \textbf{P2 (Should Complete):} Inactivity Nudges (3.3), API Tests (3.7).
+    \item \textbf{P3 (Nice-to-Have):} UI Polish details (3.6), additional tests beyond 15.
+\end{enumerate}
+
+If tasks 3.3 or 3.7 roll over, they will be prioritized in Sprint~4.
+
+% ============================================================
+% 15. Next Steps (Post-Sprint 3)
+% ============================================================
+\section{Sprint 4: Preliminary Ideas}
+
+Based on the roadmap in the PRD, Sprint~4 could include:
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Goals / Habit Tracking:} Long-term challenge tracking (e.g., ``Run 100 miles in a month'').
+    \item \textbf{Export / Reporting:} CSV export of monthly check-in summaries.
+    \item \textbf{Mobile App:} React Native companion app for iOS/Android.
+    \item \textbf{Analytics Dashboard:} Server-level insights (total check-ins, member engagement over time).
+    \item \textbf{Custom Channels:} Template-based channels with predefined check-in types (e.g., fitness, productivity, learning).
+\end{enumerate}
+
+% ============================================================
+% 16. Glossary \& References
+% ============================================================
+\section{Glossary}
+
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{Coach Bot:} Automated system that sends welcome, summary, and nudge messages to keep users engaged.
+    \item \textbf{Emoji Reactions:} Quick-feedback mechanism using emoji (e.g., \texttt{+1}, \texttt{heart}, \texttt{fire}).
+    \item \textbf{Leaderboard:} Monthly ranking of channel members by check-in count.
+    \item \textbf{Skeleton Loader:} Placeholder UI element shown while data is loading.
+    \item \textbf{Toast:} Transient notification message that appears and dismisses automatically.
+    \item \textbf{APScheduler:} Python library for scheduling background tasks at fixed intervals.
+\end{itemize}
+
+\end{document}
