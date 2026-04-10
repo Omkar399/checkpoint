@@ -1,9 +1,13 @@
+import { useState } from 'react'
 import { Outlet, useParams } from 'react-router-dom'
 import Sidebar from '../components/layout/Sidebar'
 import ChannelList from '../components/layout/ChannelList'
+import DailyDashboard from '../components/dashboard/DailyDashboard'
+import UserProfileModal from '../components/profile/UserProfileModal'
 
 export default function DashboardPage() {
-  const { channelId } = useParams()
+  const { serverId, channelId } = useParams()
+  const [profileUserId, setProfileUserId] = useState(null)
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[var(--bg-tertiary)]">
@@ -17,6 +21,23 @@ export default function DashboardPage() {
       <div className="flex-1 flex flex-col min-w-0">
         {channelId ? (
           <Outlet />
+        ) : serverId ? (
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
+                Server Dashboard
+              </h2>
+              <p className="text-[var(--text-muted)] text-sm mb-6">
+                Select a channel to view today's check-in status
+              </p>
+            </div>
+
+            <UserProfileModal
+              isOpen={!!profileUserId}
+              onClose={() => setProfileUserId(null)}
+              userId={profileUserId}
+            />
+          </div>
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">

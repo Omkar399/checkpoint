@@ -8,6 +8,12 @@ from app.schemas.channel import (
 )
 from app.schemas.message import CreateMessageRequest, MessageResponse
 from app.schemas.invite import CreateInviteRequest, InviteResponse
+from app.schemas.checkin import (
+    CheckInCreate,
+    CheckInResponse,
+    DailyStatusEntry,
+    HeatmapEntry,
+)
 
 __all__ = [
     "RegisterRequest",
@@ -24,4 +30,8 @@ __all__ = [
     "MessageResponse",
     "CreateInviteRequest",
     "InviteResponse",
+    "CheckInCreate",
+    "CheckInResponse",
+    "DailyStatusEntry",
+    "HeatmapEntry",
 ]

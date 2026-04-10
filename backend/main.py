@@ -12,6 +12,7 @@ from app.models import (  # noqa: F401
     Channel,
     ChannelMember,
     Message,
+    CheckIn,
 )
 
 # Create all tables
@@ -29,7 +30,7 @@ app.add_middleware(
 )
 
 # Include routers
-from app.routers import auth, servers, invites, channels, messages, ws  # noqa: E402
+from app.routers import auth, servers, invites, channels, messages, ws, checkins, users  # noqa: E402
 
 app.include_router(auth.router)
 app.include_router(servers.router)
@@ -37,6 +38,8 @@ app.include_router(invites.router)
 app.include_router(channels.router)
 app.include_router(messages.router)
 app.include_router(ws.router)
+app.include_router(checkins.router)
+app.include_router(users.router)
 
 
 @app.get("/")

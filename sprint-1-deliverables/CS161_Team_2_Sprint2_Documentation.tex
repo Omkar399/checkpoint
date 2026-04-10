@@ -1,0 +1,353 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{longtable}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+
+\begin{document}
+
+% ============================================================
+% HEADER
+% ============================================================
+\begin{center}
+    {\LARGE \textbf{Status Report: Sprint \#2}} \\[6pt]
+    {\large CS161, Spring 2026}
+\end{center}
+
+\vspace{0.5em}
+
+% ============================================================
+% 1. Team Information
+% ============================================================
+\section{Team Information}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+    \textbf{Team Number:}          & Team 2 \\
+    \textbf{Team Name:}            & Checkpoint \\
+    \textbf{Team Members:}         & Omkar Podey, Anmol Rastogi \\
+    \textbf{Class:}                & CS161, Software Engineering, Spring 2026 \\
+    \textbf{Date:}                 & April 9, 2026 \\
+    \textbf{Sprint Period:}        & March 16 to April 9, 2026 \\
+\end{tabularx}
+
+% ============================================================
+% 2. Task List Link
+% ============================================================
+\section{Product Backlog / Task List}
+
+\textbf{Trello Board:} \url{https://trello.com/b/ufZ3LwJi/checkpoint-cs161}
+
+\textbf{GitHub Repository:} \url{https://github.com/Omkar399/checkpoint}
+
+% ============================================================
+% 3. Sprint 2 Objectives
+% ============================================================
+\section{Sprint 2: Objectives}
+
+The objective of Sprint~2 was to implement the core accountability feature of Checkpoint: structured check-ins with data visualization. This sprint adds the primary differentiator of the platform on top of the communication foundation built in Sprint~1.
+
+\textbf{Key goals:}
+\begin{itemize}[leftmargin=1.5em]
+    \item Allow channel members to post structured Check-ins with a numeric value and optional note.
+    \item Visually distinguish Check-in Cards from regular chat messages in the unified feed.
+    \item Build a Daily Dashboard showing per-member check-in status (green/gray indicators).
+    \item Build a User Profile modal with a GitHub-style Activity Heatmap for monthly/yearly views.
+    \item Display streak counts (consecutive days with a check-in) per channel.
+    \item Broadcast check-in events in real-time via WebSockets.
+    \item Enforce API-level authorization so only server/channel members can access check-in data.
+\end{itemize}
+
+% ============================================================
+% 4. Sprint 2 User Stories
+% ============================================================
+\section{Sprint 2: User Stories}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}clXc@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Story} & \textbf{Status} \\
+\midrule
+2.1 & Must Have & As a channel member, I can post a structured Check-in by entering a value and an optional note. & \textbf{Done} \\
+2.2 & Must Have & As a channel member, I can visually distinguish Check-in Cards from regular chat messages. & \textbf{Done} \\
+2.3 & Must Have & As a server member, I can view a Daily Dashboard showing who has checked in today. & \textbf{Done} \\
+2.4 & Must Have & As a user, I can view any member's profile to see a Monthly/Yearly Heatmap. & \textbf{Done} \\
+2.5 & Should Have & As a user, I can see my current streak count for each channel. & \textbf{Done} \\
+2.6 & Must Have & As a server member, I can click on a user's avatar to view their profile and heatmap. & \textbf{Done} \\
+2.7 & Must Have & As a non-member, I am denied access to channels and check-in data by the API. & \textbf{Done} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Incomplete / Carried Over:} None. All Sprint~2 user stories were completed.
+
+% ============================================================
+% 5. Sprint 2 Task Summary
+% ============================================================
+\section{Sprint 2: Task Summary}
+
+All 7 Sprint~2 tasks were \textbf{completed} by the end of the sprint.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lXcc@{}}
+\toprule
+\textbf{\#} & \textbf{Task} & \textbf{Assigned To} & \textbf{Status} \\
+\midrule
+1 & CheckIn Database Model \& Migration & Omkar & \textbf{Done} \\
+2 & CheckIn Schemas \& Service Layer & Omkar & \textbf{Done} \\
+3 & CheckIn API Endpoints \& WebSocket Integration & Omkar & \textbf{Done} \\
+4 & Frontend API Modules (checkins, users) & Anmol & \textbf{Done} \\
+5 & CheckIn Card \& CheckIn Modal Components & Anmol & \textbf{Done} \\
+6 & Daily Dashboard \& User Profile/Heatmap Components & Anmol & \textbf{Done} \\
+7 & Full Integration: ChannelPage, MessageFeed, WebSocket & Both & \textbf{Done} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ============================================================
+% 6. Technical Implementation Summary
+% ============================================================
+\section{Technical Implementation}
+
+\subsection{Backend: New API Endpoints}
+
+The following REST endpoints were added under \texttt{/api/v1}:
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Description} \\
+\midrule
+POST & \texttt{/channels/\{id\}/checkins} & Create a new check-in for the authenticated user \\
+GET  & \texttt{/channels/\{id\}/checkins} & List check-ins for a channel (optional date filter) \\
+GET  & \texttt{/channels/\{id\}/dashboard} & Daily dashboard: per-member check-in status \\
+GET  & \texttt{/channels/\{id\}/streak} & Current user's streak count in a channel \\
+GET  & \texttt{/users/\{id\}/profile} & Retrieve a user's public profile \\
+GET  & \texttt{/users/\{id\}/heatmap} & Yearly check-in heatmap (optional channel/year filter) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+All check-in endpoints enforce channel membership via the \texttt{\_require\_channel\_member} helper. Check-in timestamps are generated server-side to ensure data integrity.
+
+\subsection{Backend: Database Changes}
+
+A new \texttt{checkins} table was added with the following columns:
+
+\begin{itemize}[leftmargin=1.5em]
+    \item \texttt{id} (PK), \texttt{user\_id} (FK $\rightarrow$ users), \texttt{channel\_id} (FK $\rightarrow$ channels)
+    \item \texttt{value} (Float, nullable), \texttt{note} (Text, nullable)
+    \item \texttt{checked\_in\_at} (DateTime, server-side default: UTC now)
+\end{itemize}
+
+Two composite indexes were added for query performance:
+\begin{itemize}[leftmargin=1.5em]
+    \item \texttt{ix\_checkins\_channel\_checked\_in\_at} --- optimizes channel-scoped date queries.
+    \item \texttt{ix\_checkins\_user\_channel\_checked\_in\_at} --- optimizes per-user streak and heatmap queries.
+\end{itemize}
+
+\subsection{Backend: Service Layer}
+
+The \texttt{checkin\_service} module provides:
+
+\begin{itemize}[leftmargin=1.5em]
+    \item \texttt{create\_checkin} --- Inserts a check-in with eager-loaded user data.
+    \item \texttt{get\_channel\_checkins} --- Retrieves check-ins with optional date filtering and pagination.
+    \item \texttt{get\_daily\_dashboard} --- Aggregates today's check-ins against channel membership to produce green/gray status.
+    \item \texttt{get\_user\_heatmap} --- Groups check-ins by date for a given year, returning date/count pairs.
+    \item \texttt{get\_user\_streak} --- Computes consecutive-day streak by walking sorted distinct dates backward.
+    \item \texttt{get\_user\_profile} --- Simple user lookup for profile modals.
+\end{itemize}
+
+\subsection{Backend: WebSocket Integration}
+
+The existing WebSocket endpoint (\texttt{/ws/\{channel\_id\}}) was extended to handle a new \texttt{send\_checkin} event type. When a client sends a \texttt{send\_checkin} message, the server creates a check-in in the database and broadcasts a \texttt{new\_checkin} event to all connected clients in the channel, enabling real-time feed updates.
+
+\subsection{Frontend: New Components}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Component} & \textbf{Description} \\
+\midrule
+\texttt{CheckInCard} & Styled card in the message feed displaying value, unit, note, and streak badge. Visually distinct from chat bubbles (colored left border, icon). \\
+\texttt{CheckInModal} & Modal dialog for submitting a check-in. Supports numeric value input and a ``Done'' toggle for boolean channels. \\
+\texttt{DailyDashboard} & Grid of member avatars with green (checked in) / gray (not yet) indicators for today. \\
+\texttt{ActivityHeatmap} & GitHub-style yearly calendar heatmap using \texttt{react-calendar-heatmap}. Color intensity scales with check-in count per day. \\
+\texttt{UserProfileModal} & Profile modal showing username, join date, and the Activity Heatmap. Opened by clicking any user avatar. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Frontend: API Modules}
+
+Two new API modules were added:
+
+\begin{itemize}[leftmargin=1.5em]
+    \item \texttt{api/checkins.js} --- \texttt{createCheckin}, \texttt{getCheckins}, \texttt{getDashboard}, \texttt{getStreak}.
+    \item \texttt{api/users.js} --- \texttt{getUserProfile}, \texttt{getUserHeatmap}.
+\end{itemize}
+
+\subsection{Frontend: Integration}
+
+Key integration points across existing components:
+
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{ChannelPage}: Added a green check-in button next to the message input, streak badge in the channel header, and wired CheckInModal and UserProfileModal.
+    \item \textbf{MessageFeed}: Now renders \texttt{CheckInCard} for messages with \texttt{message\_type === 'checkin'}, and passes \texttt{onUsernameClick} for profile navigation.
+    \item \textbf{useWebSocket}: Updated to handle \texttt{new\_checkin} events alongside \texttt{new\_message} events for real-time feed updates.
+\end{itemize}
+
+% ============================================================
+% 7. Definition of Done Verification
+% ============================================================
+\section{Definition of Done: Verification}
+
+The Sprint~2 Definition of Done (from the Sprint Plan) required:
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{All user stories implemented and manually tested.}
+    \begin{itemize}
+        \item Verified: All 7 user stories (2.1--2.7) are implemented and functional.
+    \end{itemize}
+
+    \item \textbf{Full check-in flow works end-to-end:} Navigate to Channel $\rightarrow$ Tap Check-in $\rightarrow$ Enter Value $\rightarrow$ Card Appears in Feed $\rightarrow$ Daily Dashboard Updates $\rightarrow$ Heatmap Reflects New Data.
+    \begin{itemize}
+        \item Verified: The check-in button opens CheckInModal, submission creates a server-side check-in, the CheckInCard appears in the MessageFeed, and the heatmap/dashboard reflect the new data.
+    \end{itemize}
+
+    \item \textbf{Check-in timestamps are generated server-side.}
+    \begin{itemize}
+        \item Verified: The \texttt{checked\_in\_at} column defaults to \texttt{datetime.now(timezone.utc)} in the model. The \texttt{CheckInCreate} schema does not accept a timestamp field.
+    \end{itemize}
+
+    \item \textbf{API returns 403 Forbidden for non-members.}
+    \begin{itemize}
+        \item Verified: All check-in endpoints call \texttt{\_require\_channel\_member}, which raises \texttt{HTTP 403} if the user is not a member.
+    \end{itemize}
+\end{enumerate}
+
+% ============================================================
+% 8. What Went Well
+% ============================================================
+\section{What Went Well}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Clean backend-to-frontend contract}: Defining Pydantic schemas (CheckInCreate, CheckInResponse, DailyStatusEntry, HeatmapEntry) before implementation enabled parallel backend/frontend development with minimal integration friction.
+
+    \item \textbf{All 7 user stories completed on time}: Every Sprint~2 task was finished within the sprint window, keeping the project on track for Sprint~3.
+
+    \item \textbf{WebSocket check-in broadcast}: Extending the existing WebSocket layer to handle check-in events was straightforward, and check-ins now appear in real-time without a page refresh.
+
+    \item \textbf{Heatmap and streak logic}: The GitHub-style heatmap (using \texttt{react-calendar-heatmap}) and streak calculation provide meaningful accountability visualizations with minimal complexity.
+
+    \item \textbf{Authorization enforcement}: All new endpoints enforce channel membership, fulfilling the security requirement from the PRD.
+\end{enumerate}
+
+% ============================================================
+% 9. Issues / What Didn't Go Well
+% ============================================================
+\section{Issues / What Didn't Go Well}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{No automated tests}: As with Sprint~1, the team focused on feature delivery over testing. The growing API surface (now 16+ endpoints) increases regression risk.
+
+    \item \textbf{Dashboard only accessible from ChannelPage}: The DailyDashboard component was built but is not yet surfaced in a standalone view; users must navigate to a channel to see it. A server-level dashboard would be more useful.
+
+    \item \textbf{Heatmap library dependency}: Adding \texttt{react-calendar-heatmap} and \texttt{react-tooltip} introduces external dependencies. These libraries are stable but add to the bundle size.
+
+    \item \textbf{Streak calculation is sequential}: The current streak algorithm fetches all distinct check-in dates and walks them in Python. For users with many months of data, a more efficient SQL-based approach would be preferable.
+\end{enumerate}
+
+% ============================================================
+% 10. Changes for Next Sprint
+% ============================================================
+\section{Changes for Next Sprint}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Implement the Coach Bot}: Automated welcome messages, daily summaries, and 48-hour inactivity nudges are the primary Sprint~3 features.
+
+    \item \textbf{Add emoji reactions to check-in cards}: Low-friction encouragement for peers.
+
+    \item \textbf{Build the Leaderboard component}: Monthly ranking by total check-ins within a channel.
+
+    \item \textbf{UI polish pass}: Loading skeletons, error toasts, empty states, and responsive adjustments.
+
+    \item \textbf{Begin writing basic API tests}: Target at least the check-in and authentication flows.
+\end{enumerate}
+
+% ============================================================
+% 11. Scrum Meetings
+% ============================================================
+\section{Scrum Meetings}
+
+A total of \textbf{16 scrum meetings} were held during Sprint~2 (March 16 to April 9, 2026). Meetings ranged from 5 to 8 minutes, covering progress, blockers, and next steps.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}clXc@{}}
+\toprule
+\textbf{\#} & \textbf{Date} & \textbf{Location} & \textbf{Attendance} \\
+\midrule
+1  & Mar 16 (Mon) & In-class           & 100\% \\
+2  & Mar 17 (Tue) & Discord (virtual)  & 100\% \\
+3  & Mar 18 (Wed) & In-class           & 100\% \\
+4  & Mar 20 (Fri) & Discord (virtual)  & 100\% \\
+5  & Mar 21 (Sat) & Discord (virtual)  & 100\% \\
+6  & Mar 23 (Mon) & In-class           & 100\% \\
+7  & Mar 24 (Tue) & Discord (virtual)  & 100\% \\
+8  & Mar 25 (Wed) & In-class           & 100\% \\
+9  & Mar 28 (Fri) & Discord (virtual)  & 100\% \\
+10 & Mar 30 (Mon) & In-class           & 100\% \\
+11 & Apr 1 (Tue)  & Discord (virtual)  & 100\% \\
+12 & Apr 2 (Wed)  & In-class           & 100\% \\
+13 & Apr 4 (Fri)  & Discord (virtual)  & 100\% \\
+14 & Apr 6 (Mon)  & In-class           & 100\% \\
+15 & Apr 7 (Tue)  & Discord (virtual)  & 100\% \\
+16 & Apr 8 (Wed)  & In-class           & 100\% \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Meeting breakdown:}
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{8 in-class meetings}: Sprint planning, architecture review, integration discussions, and demo prep.
+    \item \textbf{8 virtual meetings (Discord)}: Implementation check-ins, code review, and blocker resolution.
+\end{itemize}
+
+% ============================================================
+% 12. Individual Contributions
+% ============================================================
+\section{Individual Contributions}
+
+\subsection{Omkar Podey}
+\begin{itemize}[leftmargin=1.5em]
+    \item Designed and implemented the CheckIn database model with composite indexes for query performance.
+    \item Built the CheckIn Pydantic schemas (CheckInCreate, CheckInResponse, DailyStatusEntry, HeatmapEntry).
+    \item Implemented the checkin\_service module: create, retrieve, daily dashboard aggregation, heatmap grouping, and streak calculation.
+    \item Built the checkins router with CRUD endpoints and channel-membership authorization.
+    \item Built the users router with profile and heatmap endpoints.
+    \item Extended the WebSocket handler to support real-time check-in broadcasts.
+    \item Integrated new routers into the FastAPI application entry point.
+\end{itemize}
+
+\subsection{Anmol Rastogi}
+\begin{itemize}[leftmargin=1.5em]
+    \item Created the frontend API modules for check-ins (\texttt{checkins.js}) and user profiles (\texttt{users.js}).
+    \item Built the CheckInCard component with value display, streak badge, and visual differentiation from chat messages.
+    \item Built the CheckInModal with numeric and boolean (Done/Not Done) input modes.
+    \item Built the DailyDashboard component with per-member green/gray status indicators.
+    \item Built the ActivityHeatmap component using \texttt{react-calendar-heatmap} with tooltips.
+    \item Built the UserProfileModal with user info and integrated heatmap.
+    \item Integrated all new components into the ChannelPage, MessageFeed, and useWebSocket hook.
+\end{itemize}
+
+\end{document}

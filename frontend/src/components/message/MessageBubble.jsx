@@ -21,7 +21,7 @@ function formatTimestamp(dateStr) {
   return `${date.toLocaleDateString()} ${time}`
 }
 
-export default function MessageBubble({ message, showAuthor }) {
+export default function MessageBubble({ message, showAuthor, onUsernameClick }) {
   const username = message.username || message.user?.username || 'Unknown'
 
   if (!showAuthor) {
@@ -43,14 +43,20 @@ export default function MessageBubble({ message, showAuthor }) {
   return (
     <div className="group flex gap-4 px-2 py-1 mt-4 first:mt-0 hover:bg-[var(--bg-modifier)] rounded">
       {/* Avatar */}
-      <div className="w-10 h-10 rounded-full bg-[var(--accent)] flex items-center justify-center text-white text-sm font-semibold shrink-0 mt-0.5">
+      <div
+        className="w-10 h-10 rounded-full bg-[var(--accent)] flex items-center justify-center text-white text-sm font-semibold shrink-0 mt-0.5 cursor-pointer"
+        onClick={() => onUsernameClick?.(message.user_id)}
+      >
         {username.charAt(0).toUpperCase()}
       </div>
 
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
-          <span className="font-medium text-[var(--text-primary)] text-sm hover:underline cursor-pointer">
+          <span
+            className="font-medium text-[var(--text-primary)] text-sm hover:underline cursor-pointer"
+            onClick={() => onUsernameClick?.(message.user_id)}
+          >
             {username}
           </span>
           <span className="text-xs text-[var(--text-muted)]">

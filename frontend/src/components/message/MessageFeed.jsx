@@ -1,8 +1,9 @@
 import { useRef, useEffect } from 'react'
 import MessageBubble from './MessageBubble'
+import CheckInCard from '../checkin/CheckInCard'
 import LoadingSpinner from '../ui/LoadingSpinner'
 
-export default function MessageFeed({ messages, loading, onLoadMore, hasMore }) {
+export default function MessageFeed({ messages, loading, onLoadMore, hasMore, onUsernameClick }) {
   const bottomRef = useRef(null)
   const containerRef = useRef(null)
   const prevMessageCountRef = useRef(0)
@@ -52,9 +53,20 @@ export default function MessageFeed({ messages, loading, onLoadMore, hasMore }) 
       )}
 
       {messages.map((message, index) => {
+        if (message.message_type === 'checkin') {
+          return (
+            <CheckInCard
+              key={message.id}
+              message={message}
+              onUsernameClick={onUsernameClick}
+            />
+          )
+        }
+
         const prevMessage = index > 0 ? messages[index - 1] : null
         const showAuthor =
           !prevMessage ||
+          prevMessage.message_type === 'checkin' ||
           prevMessage.user_id !== message.user_id ||
           (new Date(message.created_at) - new Date(prevMessage.created_at)) > 300000 // 5 min gap
         return (
@@ -62,6 +74,7 @@ export default function MessageFeed({ messages, loading, onLoadMore, hasMore }) 
             key={message.id}
             message={message}
             showAuthor={showAuthor}
+            onUsernameClick={onUsernameClick}
           />
         )
       })}

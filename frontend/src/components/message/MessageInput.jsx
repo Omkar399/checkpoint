@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 
-export default function MessageInput({ onSend, channelName }) {
+export default function MessageInput({ onSend, channelName, onCheckinClick }) {
   const [content, setContent] = useState('')
   const textareaRef = useRef(null)
 
@@ -30,25 +30,38 @@ export default function MessageInput({ onSend, channelName }) {
 
   return (
     <div className="px-4 pb-6 pt-2">
-      <div className="flex items-end gap-2 bg-[var(--bg-secondary)] rounded-lg px-4 py-2.5">
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={`Message #${channelName || 'channel'}`}
-          rows={1}
-          className="flex-1 bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm resize-none focus:outline-none leading-6 max-h-[120px]"
-        />
-        <button
-          onClick={handleSend}
-          disabled={!content.trim()}
-          className="text-[var(--accent)] hover:text-[var(--accent-hover)] disabled:text-[var(--text-muted)] disabled:cursor-not-allowed transition-colors pb-0.5"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-          </svg>
-        </button>
+      <div className="flex items-end gap-2">
+        {onCheckinClick && (
+          <button
+            onClick={onCheckinClick}
+            className="w-10 h-10 flex items-center justify-center rounded-lg bg-[var(--success)] hover:bg-[var(--success)]/80 text-white transition-colors shrink-0"
+            title="Check In"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </button>
+        )}
+        <div className="flex-1 flex items-end gap-2 bg-[var(--bg-secondary)] rounded-lg px-4 py-2.5">
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={`Message #${channelName || 'channel'}`}
+            rows={1}
+            className="flex-1 bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm resize-none focus:outline-none leading-6 max-h-[120px]"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!content.trim()}
+            className="text-[var(--accent)] hover:text-[var(--accent-hover)] disabled:text-[var(--text-muted)] disabled:cursor-not-allowed transition-colors pb-0.5"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   )

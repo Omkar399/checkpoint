@@ -1,0 +1,186 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{longtable}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+
+\begin{document}
+
+% ============================================================
+% HEADER
+% ============================================================
+\begin{center}
+    {\LARGE \textbf{Status Report: Sprint \#1}} \\[6pt]
+    {\large CS161, Spring 2026}
+\end{center}
+
+\vspace{0.5em}
+
+% ============================================================
+% 1. Team Information
+% ============================================================
+\section{Team Information}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+    \textbf{Team Number:}          & Team 2 \\
+    \textbf{Team Name:}            & Checkpoint \\
+    \textbf{Team Members:}         & Omkar Podey, Anmol Rastogi \\
+    \textbf{Class:}                & CS161, Software Engineering, Spring 2026 \\
+    \textbf{Date:}                 & March 15, 2026 \\
+    \textbf{Sprint Period:}        & February 22 to March 15, 2026 \\
+\end{tabularx}
+
+% ============================================================
+% 2. Task List Link
+% ============================================================
+\section{Product Backlog / Task List}
+
+\textbf{Trello Board:} \url{https://trello.com/b/ufZ3LwJi/checkpoint-cs161}
+
+\textbf{GitHub Repository:} \url{https://github.com/Omkar399/checkpoint}
+
+% ============================================================
+% 3. Sprint 1 Tasks --- Completed vs. Incomplete
+% ============================================================
+\section{Sprint 1: Task Summary}
+
+All 8 Sprint~1 tasks were \textbf{completed} by the end of the sprint. Tasks were evenly divided between the two team members (4 each).
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lXcc@{}}
+\toprule
+\textbf{\#} & \textbf{Task} & \textbf{Assigned To} & \textbf{Status} \\
+\midrule
+1 & User Authentication (Login/Register) & Omkar & \textbf{Done} \\
+2 & Invite Code System & Omkar & \textbf{Done} \\
+3 & Channel Management & Omkar & \textbf{Done} \\
+4 & Database Schema \& API Validation & Omkar & \textbf{Done} \\
+5 & Server Creation & Anmol & \textbf{Done} \\
+6 & Unified Chat Feed & Anmol & \textbf{Done} \\
+7 & WebSocket Real-Time Messaging & Anmol & \textbf{Done} \\
+8 & Polling Fallback Implementation & Anmol & \textbf{Done} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Incomplete / Carried Over:} None. All Sprint~1 user stories were completed.
+
+% ============================================================
+% 4. What Went Well
+% ============================================================
+\section{What Went Well}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Clear task division}:Splitting the work into backend-focused (Omkar) and frontend-focused (Anmol) tracks allowed parallel development with minimal merge conflicts.
+
+    \item \textbf{Architecture-first approach}:Spending time on the PRD and technical architecture before coding paid off. Having a defined database schema, API contract, and component hierarchy meant both developers could work independently with confidence.
+
+    \item \textbf{All 8 features completed on time}:Every Sprint~1 task was finished within the two-week sprint window, keeping the project on track for Sprint~2.
+
+    \item \textbf{Real-time messaging working end-to-end}:The WebSocket implementation with polling fallback was a higher-risk feature, and getting it functional in Sprint~1 de-risks the remainder of the project.
+
+    \item \textbf{Tech stack choices}:FastAPI + SQLAlchemy/SQLite for backend and React + Vite for frontend proved to be productive choices, enabling rapid iteration without infrastructure overhead.
+\end{enumerate}
+
+% ============================================================
+% 5. Issues / What Didn't Go Well
+% ============================================================
+\section{Issues / What Didn't Go Well}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Frontend/backend integration testing was delayed}: While individual components were built and tested in isolation, end-to-end integration testing across the full stack was not performed until late in the sprint. This caused some last-minute debugging around CORS configuration and WebSocket token passing.
+
+    \item \textbf{WebSocket reliability on campus Wi-Fi}:The university network occasionally drops WebSocket connections. The polling fallback mitigates this, but the user experience during reconnection could be smoother.
+
+    \item \textbf{No automated tests written}:Due to time constraints, the team focused on feature implementation over writing unit or integration tests. This is technical debt that should be addressed.
+
+    \item \textbf{Trello cards lacked detail}:Cards were created with titles and assignments only, with no descriptions, checklists, or due dates were filled in. This made it harder to track granular progress during the sprint.
+\end{enumerate}
+
+% ============================================================
+% 6. Changes for Next Sprint
+% ============================================================
+\section{Changes for Next Sprint}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Add descriptions and checklists to Trello cards}:Break each feature into sub-tasks with checkboxes so progress is more visible and granular.
+
+    \item \textbf{Integration testing earlier}:Test frontend/backend integration continuously rather than deferring it to the end of the sprint.
+
+    \item \textbf{Add due dates to cards}:Set target completion dates for each task to better track pacing within the sprint.
+
+    \item \textbf{Begin writing basic tests}:Add at least API endpoint tests for critical flows (auth, check-ins) to catch regressions as the codebase grows.
+\end{enumerate}
+
+% ============================================================
+% 7. Scrum Meetings
+% ============================================================
+\section{Scrum Meetings}
+
+A total of \textbf{14 scrum meetings} were held during Sprint~1 (February 22 to March 15, 2026). Meetings were kept to 5 to 8 minutes each, covering what was done, what's next, and any blockers.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}clXc@{}}
+\toprule
+\textbf{\#} & \textbf{Date} & \textbf{Location} & \textbf{Attendance} \\
+\midrule
+1  & Feb 22 (Sat) & Discord (virtual)  & 100\% \\
+2  & Feb 24 (Mon) & In-class           & 100\% \\
+3  & Feb 25 (Tue) & Discord (virtual)  & 100\% \\
+4  & Feb 26 (Wed) & In-class           & 100\% \\
+5  & Feb 28 (Fri) & Discord (virtual)  & 100\% \\
+6  & Mar 1 (Sat)  & Discord (virtual)  & 100\% \\
+7  & Mar 3 (Mon)  & In-class           & 100\% \\
+8  & Mar 4 (Tue)  & Discord (virtual)  & 100\% \\
+9  & Mar 5 (Wed)  & In-class           & 100\% \\
+10 & Mar 7 (Fri)  & Discord (virtual)  & 100\% \\
+11 & Mar 10 (Mon) & In-class           & 100\% \\
+12 & Mar 11 (Tue) & Discord (virtual)  & 100\% \\
+13 & Mar 12 (Wed) & In-class           & 100\% \\
+14 & Mar 14 (Fri) & Discord (virtual)  & 100\% \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Meeting breakdown:}
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{6 in-class meetings}: Used class time for sprint planning, task coordination, and integration discussions.
+    \item \textbf{8 virtual meetings (Discord)}: Held outside of class for implementation progress check-ins, code review, and blocker resolution.
+\end{itemize}
+
+% ============================================================
+% 8. Individual Contributions
+% ============================================================
+\section{Individual Contributions}
+
+\subsection{Omkar Podey}
+\begin{itemize}[leftmargin=1.5em]
+    \item Designed the database schema (7 tables: users, servers, server\_members, channels, channel\_members, messages, invites).
+    \item Implemented JWT-based authentication with bcrypt password hashing (register, login, token validation).
+    \item Built the invite code system with expiration, usage limits, and server join flow.
+    \item Implemented channel management with CRUD operations, membership tracking, and authorization checks.
+    \item Set up Pydantic request/response schemas for API validation across all endpoints.
+    \item Configured the FastAPI project structure with SQLAlchemy ORM and SQLite.
+\end{itemize}
+
+\subsection{Anmol Rastogi}
+\begin{itemize}[leftmargin=1.5em]
+    \item Built the server creation feature with owner/member role management.
+    \item Developed the unified chat feed with message pagination, grouping, and auto-scroll.
+    \item Implemented WebSocket real-time messaging with the ConnectionManager and broadcast system.
+    \item Built the 10-second polling fallback for unreliable network conditions.
+    \item Created the React frontend scaffolding with Vite, including routing and layout components.
+    \item Implemented the API client layer, Auth context provider, and WebSocket hook.
+\end{itemize}
+
+\end{document}

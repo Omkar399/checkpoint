@@ -2,9 +2,12 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { getChannel } from '../api/channels'
 import { getMessages, sendMessage as sendMessageApi } from '../api/messages'
+import { getStreak } from '../api/checkins'
 import useWebSocket from '../hooks/useWebSocket'
 import MessageFeed from '../components/message/MessageFeed'
 import MessageInput from '../components/message/MessageInput'
+import CheckInModal from '../components/checkin/CheckInModal'
+import UserProfileModal from '../components/profile/UserProfileModal'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 
 export default function ChannelPage() {
@@ -14,6 +17,9 @@ export default function ChannelPage() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [showCheckinModal, setShowCheckinModal] = useState(false)
+  const [streak, setStreak] = useState(0)
+  const [profileUserId, setProfileUserId] = useState(null)
   const messagesRef = useRef(messages)
 
   useEffect(() => {
@@ -41,13 +47,14 @@ export default function ChannelPage() {
     setMessages([])
     setHasMore(true)
 
-    Promise.all([getChannel(channelId), getMessages(channelId)])
-      .then(([channelRes, messagesRes]) => {
+    Promise.all([getChannel(channelId), getMessages(channelId), getStreak(channelId)])
+      .then(([channelRes, messagesRes, streakRes]) => {
         setChannel(channelRes.data)
         const msgs = messagesRes.data || []
         // Messages come newest-first from API, reverse for display
         setMessages(msgs.reverse())
         setHasMore(msgs.length >= 50)
+        setStreak(streakRes.data?.streak || 0)
       })
       .catch(() => {
         // Failed to load channel
@@ -94,6 +101,13 @@ export default function ChannelPage() {
     [channelId, connected, connectionType, wsSendMessage, handleNewMessage]
   )
 
+  const handleCheckinCreated = useCallback((checkinMessage) => {
+    if (checkinMessage) {
+      handleNewMessage(checkinMessage)
+      setStreak((s) => s + 1)
+    }
+  }, [handleNewMessage])
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -113,6 +127,11 @@ export default function ChannelPage() {
         {channel?.target_unit && (
           <span className="text-xs text-[var(--text-muted)] ml-2 px-2 py-0.5 bg-[var(--bg-secondary)] rounded">
             Target: {channel.target_label || channel.target_unit}
+          </span>
+        )}
+        {streak > 0 && (
+          <span className="text-xs text-[var(--warning)] font-medium ml-2 px-2 py-0.5 bg-[var(--bg-secondary)] rounded">
+            {'\u{1F525}'} {streak} day streak
           </span>
         )}
         <div className="flex-1" />
@@ -138,10 +157,31 @@ export default function ChannelPage() {
         loading={loadingMore}
         onLoadMore={handleLoadMore}
         hasMore={hasMore}
+        onUsernameClick={(userId) => setProfileUserId(userId)}
       />
 
-      {/* Input */}
-      <MessageInput onSend={handleSend} channelName={channel?.name} />
+      {/* Input with check-in button */}
+      <MessageInput
+        onSend={handleSend}
+        channelName={channel?.name}
+        onCheckinClick={() => setShowCheckinModal(true)}
+      />
+
+      {/* Modals */}
+      <CheckInModal
+        isOpen={showCheckinModal}
+        onClose={() => setShowCheckinModal(false)}
+        channelId={channelId}
+        channel={channel}
+        onCheckinCreated={handleCheckinCreated}
+      />
+
+      <UserProfileModal
+        isOpen={!!profileUserId}
+        onClose={() => setProfileUserId(null)}
+        userId={profileUserId}
+        channelId={channelId}
+      />
     </div>
   )
 }

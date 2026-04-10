@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.user import User
 from app.services.auth_service import decode_access_token
-from app.services import channel_service, message_service
+from app.services import channel_service, message_service, checkin_service
 from app.ws.manager import manager
 
 router = APIRouter(prefix="/api/v1", tags=["websocket"])
@@ -109,6 +109,39 @@ async def websocket_endpoint(
                     db.close()
 
                 await manager.broadcast(channel_id, msg_data)
+
+            elif data.get("type") == "send_checkin":
+                db = SessionLocal()
+                try:
+                    checkin = checkin_service.create_checkin(
+                        db,
+                        user_id=user_id,
+                        channel_id=channel_id,
+                        value=data.get("value"),
+                        note=data.get("note"),
+                    )
+                    checkin_data = {
+                        "type": "new_checkin",
+                        "checkin": {
+                            "id": checkin.id,
+                            "channel_id": checkin.channel_id,
+                            "user_id": checkin.user_id,
+                            "value": checkin.value,
+                            "note": checkin.note,
+                            "checked_in_at": checkin.checked_in_at.isoformat(),
+                            "user": {
+                                "id": checkin.user.id,
+                                "email": checkin.user.email,
+                                "username": checkin.user.username,
+                                "avatar_url": checkin.user.avatar_url,
+                                "created_at": checkin.user.created_at.isoformat(),
+                            },
+                        },
+                    }
+                finally:
+                    db.close()
+
+                await manager.broadcast(channel_id, checkin_data)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket, channel_id)

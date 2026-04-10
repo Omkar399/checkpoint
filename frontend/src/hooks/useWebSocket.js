@@ -64,7 +64,7 @@ export default function useWebSocket(channelId, onMessage) {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
-        if (data.type === 'new_message' && data.message) {
+        if ((data.type === 'new_message' || data.type === 'new_checkin') && data.message) {
           const msg = data.message
           if (msg.id) {
             lastMessageIdRef.current = msg.id
