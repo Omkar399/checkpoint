@@ -1,16 +1,62 @@
-# React + Vite
+# Checkpoint — Frontend (Next.js)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Next.js 16 + TypeScript + Tailwind v4 + shadcn/ui. Talks to the FastAPI backend
+at `../backend/` via REST (`/api/v1`) and WebSocket (`/api/v1/ws/{channel_id}`).
 
-Currently, two official plugins are available:
+The retired React/Vite app lives at `../frontend-legacy/` — keep it around for
+API-integration reference only; don't run it.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Setup
 
-## React Compiler
+```bash
+npm install
+cp .env.local.example .env.local   # if not already present
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Open http://localhost:3000.
 
-## Expanding the ESLint configuration
+## Environment
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+`.env.local`:
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+NEXT_PUBLIC_WS_URL=ws://localhost:8000/api/v1/ws
+```
+
+The backend has CORS set to `*`, so the Next dev server can hit
+`http://localhost:8000` directly — no proxy needed.
+
+## Scripts
+
+- `npm run dev` — dev server on port 3000
+- `npm run build` — production build
+- `npm start` — serve the production build
+- `npm run lint` — ESLint
+
+## Layout
+
+```
+src/
+├── app/                    # App Router pages
+│   ├── (app)/              # authed routes (dashboard, channels)
+│   ├── login/              # public
+│   ├── register/
+│   └── join/[inviteCode]/
+├── components/ui/          # shadcn primitives
+├── hooks/use-websocket.ts  # WS + polling fallback
+├── lib/api/                # typed REST client
+└── providers/              # AuthProvider
+```
+
+## Auth
+
+Tokens live in `localStorage` under the key `token`. The axios client attaches
+a `Bearer` header on every request; 401s force a redirect to `/login`.
+
+## Backend
+
+See `../backend/README.md` (or run `uvicorn main:app --reload` from
+`../backend/`). The WebSocket closes with code 4001 on bad tokens and 4003 on
+non-member channels.

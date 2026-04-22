@@ -1,0 +1,435 @@
+@import "tailwindcss";
+
+/* ============================================================
+   CHECKPOINT — Spotify-inspired dark design system
+   Near-black immersion. Green as the only brand color.
+   Pill geometry. Uppercase-tracked buttons. Heavy shadows.
+   ============================================================ */
+
+:root {
+  /* --- Surfaces — near-black immersion --- */
+  --bg-primary: #121212;          /* deepest canvas */
+  --bg-secondary: #181818;        /* cards, sidebar panels */
+  --bg-tertiary: #1f1f1f;         /* interactive surfaces, inputs */
+  --bg-elevated: #252525;         /* popovers, modals */
+  --bg-modifier: rgba(255, 255, 255, 0.06);  /* hover wash */
+  --bg-modifier-strong: rgba(255, 255, 255, 0.10);
+  --bg-glass: rgba(18, 18, 18, 0.72);
+
+  /* --- Text — white / silver scale --- */
+  --text-primary: #ffffff;
+  --text-secondary: #cbcbcb;
+  --text-muted: #b3b3b3;
+  --text-dim: #7c7c7c;
+
+  /* --- Brand — Spotify Green (functional only) --- */
+  --lime: #1ed760;                /* primary accent, CTAs, active, check-in */
+  --lime-soft: #1db954;           /* hover */
+  --lime-glow: rgba(30, 215, 96, 0.28);
+
+  /* --- Semantic colors --- */
+  --coral: #ffa42b;               /* warning orange — streak fire */
+  --coral-glow: rgba(255, 164, 43, 0.22);
+
+  --cyan: #539df5;                /* announcement blue — info, panel active */
+  --cyan-glow: rgba(83, 157, 245, 0.22);
+
+  --violet: #b3b3b3;              /* reactions — muted silver */
+  --violet-glow: rgba(179, 179, 179, 0.20);
+
+  --amber: #ffa42b;               /* same as warning orange */
+  --rose: #f3727f;                /* negative red — danger, errors */
+
+  /* --- Legacy mappings --- */
+  --accent: var(--lime);
+  --accent-hover: var(--lime-soft);
+  --success: var(--lime);
+  --danger: var(--rose);
+  --warning: var(--coral);
+  --border: #2a2a2a;
+
+  /* --- Borders --- */
+  --border-subtle: #222222;
+  --border-strong: #4d4d4d;
+  --border-light: #7c7c7c;
+
+  /* --- Shadows — heavy for dark immersion --- */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 8px rgba(0, 0, 0, 0.30);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.50);
+  --shadow-card: var(--shadow-md);
+  --shadow-dialog: var(--shadow-lg);
+
+  --shadow-glow-lime: 0 0 0 1px rgba(30, 215, 96, 0.3) inset,
+                      0 8px 20px rgba(30, 215, 96, 0.25);
+  --shadow-glow-coral: 0 0 0 1px rgba(255, 164, 43, 0.3) inset,
+                       0 8px 20px rgba(255, 164, 43, 0.20);
+
+  /* --- Input inset border (Spotify's signature) --- */
+  --input-border-inset: rgb(18, 18, 18) 0px 1px 0px,
+                        rgb(124, 124, 124) 0px 0px 0px 1px inset;
+  --input-border-focus: rgb(18, 18, 18) 0px 1px 0px,
+                        rgb(255, 255, 255) 0px 0px 0px 1px inset;
+
+  /* --- Fonts — Inter as CircularSp stand-in --- */
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.003em;
+}
+
+#root {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Scrollbars — thin, unobtrusive --- */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #4d4d4d;
+  border-radius: 10px;
+  border: 3px solid var(--bg-primary);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7c7c7c;
+  background-clip: padding-box;
+  border: 3px solid var(--bg-primary);
+}
+
+/* ============================================================
+   Type utilities
+   ============================================================ */
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum", "zero";
+}
+
+/* Eyebrow — Spotify uppercase label voice */
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Button label — the signature Spotify voice */
+.btn-label {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* ============================================================
+   Signature glows & accents
+   ============================================================ */
+
+.halo-lime {
+  box-shadow: var(--shadow-glow-lime);
+}
+
+.halo-coral {
+  box-shadow: var(--shadow-glow-coral);
+}
+
+/* No decorative gradients — keep green functional only.
+   The "gradient" utilities become solid accents. */
+.gradient-lime {
+  color: var(--lime);
+}
+
+.gradient-heat {
+  color: var(--coral);
+}
+
+/* Card surface — plain dark panel with subtle lift */
+.card-surface {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Dashed separator */
+.rule-dashed {
+  background-image: linear-gradient(to right, var(--border-strong) 50%, transparent 0%);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  height: 1px;
+}
+
+/* Spotify-style input treatment */
+.input-spotify {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  box-shadow: var(--input-border-inset);
+  border: none;
+  border-radius: 500px;
+}
+.input-spotify:focus {
+  box-shadow: var(--input-border-focus);
+  outline: none;
+}
+
+/* ============================================================
+   Auth layouts
+   ============================================================ */
+
+.auth-shell {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(30, 215, 96, 0.14) 0%, transparent 24rem),
+    radial-gradient(circle at 86% 16%, rgba(83, 157, 245, 0.14) 0%, transparent 22rem),
+    linear-gradient(180deg, #151718 0%, #101213 52%, #0d0f10 100%);
+}
+
+.auth-shell::before {
+  content: "";
+  position: absolute;
+  inset: clamp(12px, 2vw, 24px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 32px;
+  pointer-events: none;
+}
+
+.auth-frame {
+  width: min(1180px, calc(100% - clamp(24px, 5vw, 72px)));
+  margin-inline: auto;
+}
+
+.auth-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(360px, 430px);
+  align-items: center;
+  gap: clamp(40px, 7vw, 104px);
+  padding-block: clamp(40px, 9vh, 88px);
+}
+
+.auth-story {
+  display: grid;
+  gap: clamp(28px, 4vw, 44px);
+  max-width: 42rem;
+}
+
+.auth-proof-list {
+  display: grid;
+  gap: 16px;
+}
+
+.auth-proof {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding: 20px 22px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
+}
+
+.auth-proof-number {
+  display: inline-flex;
+  min-width: 42px;
+  justify-content: center;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--lime);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.auth-panel {
+  position: relative;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.018) 100%),
+    rgba(24, 24, 24, 0.92);
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.42);
+}
+
+.auth-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 26%);
+  pointer-events: none;
+}
+
+.auth-panel-content {
+  position: relative;
+  display: grid;
+  gap: 28px;
+  padding: clamp(24px, 4vw, 38px);
+}
+
+@media (max-width: 960px) {
+  .auth-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    padding-block: 24px 56px;
+  }
+
+  .auth-story {
+    max-width: none;
+  }
+
+  .auth-panel {
+    max-width: 36rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-shell::before {
+    inset: 10px;
+    border-radius: 24px;
+  }
+
+  .auth-proof {
+    gap: 14px;
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .auth-panel {
+    border-radius: 28px;
+  }
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+
+@keyframes enterUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes enterScale {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pulseLime {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(30, 215, 96, 0.35), 0 6px 20px rgba(30, 215, 96, 0.22); }
+  50%      { box-shadow: 0 0 0 12px rgba(30, 215, 96, 0), 0 6px 24px rgba(30, 215, 96, 0.28); }
+}
+@keyframes flicker {
+  0%, 100% { transform: translateY(0) rotate(-2deg) scale(1); opacity: 1; }
+  25%      { transform: translateY(-1px) rotate(2deg) scale(1.05); opacity: 0.95; }
+  50%      { transform: translateY(0) rotate(-1deg) scale(1.02); opacity: 1; }
+  75%      { transform: translateY(-2px) rotate(3deg) scale(1.07); opacity: 0.97; }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes bounceCheck {
+  0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+  60%  { transform: scale(1.2) rotate(6deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+@keyframes spark {
+  0%   { transform: translate(0,0) scale(0); opacity: 1; }
+  100% { transform: var(--spark-end); opacity: 0; }
+}
+
+.anim-enter-up { animation: enterUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-enter-scale { animation: enterScale 0.25s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-pulse-lime { animation: pulseLime 2.2s ease-in-out infinite; }
+.anim-flicker { animation: flicker 1.6s ease-in-out infinite; transform-origin: 50% 80%; }
+.anim-bounce-check { animation: bounceCheck 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+.stagger > * { animation: enterUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger > *:nth-child(3) { animation-delay: 0.12s; }
+.stagger > *:nth-child(4) { animation-delay: 0.16s; }
+.stagger > *:nth-child(5) { animation-delay: 0.20s; }
+.stagger > *:nth-child(6) { animation-delay: 0.24s; }
+.stagger > *:nth-child(7) { animation-delay: 0.28s; }
+.stagger > *:nth-child(8) { animation-delay: 0.32s; }
+
+/* Shimmering skeleton */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 0%,
+    var(--bg-tertiary) 50%,
+    var(--bg-secondary) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* Heatmap overrides for react-calendar-heatmap */
+.react-calendar-heatmap text {
+  font-family: var(--font-mono);
+  font-size: 6px;
+  fill: var(--text-muted);
+}
+.react-calendar-heatmap rect {
+  rx: 2;
+  ry: 2;
+}
+
+/* Focus rings */
+:focus-visible {
+  outline: none;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+  border-radius: inherit;
+}
+
+/* Selection */
+::selection {
+  background: var(--lime);
+  color: #000000;
+}
