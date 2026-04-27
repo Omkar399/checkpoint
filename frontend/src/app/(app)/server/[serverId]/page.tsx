@@ -62,6 +62,7 @@ export default function ServerPage() {
   }, [serverId]);
 
   return (
+    <div className="h-full overflow-y-auto">
     <div className="mx-auto w-full max-w-6xl space-y-8 px-8 py-10">
       {/* Hero */}
       <div className="flex items-end gap-6">
@@ -168,6 +169,7 @@ export default function ServerPage() {
           </div>
         )}
       </section>
+    </div>
     </div>
   );
 }

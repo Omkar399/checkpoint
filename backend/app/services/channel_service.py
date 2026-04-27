@@ -1,3 +1,5 @@
+import json
+
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.channel import Channel
@@ -12,6 +14,8 @@ def create_channel(
     target_unit: str | None,
     target_label: str | None,
     created_by: int,
+    kind: str = "numeric",
+    items: list[str] | None = None,
 ) -> Channel:
     channel = Channel(
         server_id=server_id,
@@ -19,6 +23,8 @@ def create_channel(
         description=description,
         target_unit=target_unit,
         target_label=target_label,
+        kind=kind,
+        items=json.dumps(items) if items else None,
         created_by=created_by,
     )
     db.add(channel)

@@ -36,6 +36,7 @@ export default function DashboardPage() {
   }, [load]);
 
   return (
+    <div className="h-full overflow-y-auto">
     <div className="mx-auto w-full max-w-6xl space-y-10 px-8 py-10">
       <DashboardStatsHero />
 
@@ -99,6 +100,7 @@ export default function DashboardPage() {
           ))}
         </div>
       ) : null}
+    </div>
     </div>
   );
 }

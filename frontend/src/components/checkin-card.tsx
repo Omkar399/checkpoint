@@ -1,19 +1,29 @@
 "use client";
 
-import { CircleCheckIcon } from "lucide-react";
+import { CircleCheckIcon, NotebookPenIcon, ListChecksIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ReactionBar } from "@/components/reaction-bar";
-import type { CheckIn } from "@/lib/api/types";
+import { cn } from "@/lib/utils";
+import type { ChannelKind, CheckIn } from "@/lib/api/types";
 
 interface CheckInCardProps {
   checkin: CheckIn;
+  kind?: ChannelKind;
   targetUnit?: string | null;
+  channelItems?: string[] | null;
   onToggleReaction: (checkinId: number, emoji: string, reactedByMe: boolean) => void;
   onUserClick?: (userId: number) => void;
 }
 
-export function CheckInCard({ checkin, targetUnit, onToggleReaction, onUserClick }: CheckInCardProps) {
-  const { user, value, note, checked_in_at, reactions } = checkin;
+export function CheckInCard({
+  checkin,
+  kind = "numeric",
+  targetUnit,
+  channelItems,
+  onToggleReaction,
+  onUserClick,
+}: CheckInCardProps) {
+  const { user, value, note, checked_in_at, reactions, checked_items } = checkin;
   const initial = user.username.charAt(0).toUpperCase();
   const time = new Date(checked_in_at).toLocaleTimeString([], {
     hour: "2-digit",
@@ -21,6 +31,36 @@ export function CheckInCard({ checkin, targetUnit, onToggleReaction, onUserClick
   });
 
   const handleUserClick = onUserClick ? () => onUserClick(user.id) : undefined;
+
+  const badge = (() => {
+    if (kind === "binary") {
+      return {
+        Icon: CircleCheckIcon,
+        label: "Done",
+        className: "bg-primary/20 text-primary",
+      };
+    }
+    if (kind === "freeform") {
+      return {
+        Icon: NotebookPenIcon,
+        label: "Reflection",
+        className: "bg-[color:var(--color-ink-300)] text-foreground",
+      };
+    }
+    if (kind === "checklist") {
+      return {
+        Icon: ListChecksIcon,
+        label: "Checklist",
+        className: "bg-primary/15 text-primary",
+      };
+    }
+    return {
+      Icon: CircleCheckIcon,
+      label: "Check-in",
+      className: "bg-primary/15 text-primary",
+    };
+  })();
+  const BadgeIcon = badge.Icon;
 
   return (
     <div className="rounded-lg border-l-2 border-l-primary bg-[color:var(--color-ink-200)] px-4 py-3">
@@ -56,21 +96,69 @@ export function CheckInCard({ checkin, targetUnit, onToggleReaction, onUserClick
             ) : (
               <span className="font-bold text-foreground">{user.username}</span>
             )}
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-              <CircleCheckIcon className="size-3" />
-              Check-in
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${badge.className}`}
+            >
+              <BadgeIcon className="size-3" />
+              {badge.label}
             </span>
             <span className="text-xs text-muted-foreground">{time}</span>
           </div>
-          {value != null ? (
-            <div className="flex items-baseline gap-1 text-foreground">
+
+          {/* Body — varies by kind */}
+          {kind === "numeric" && value != null ? (
+            <div className="flex items-baseline gap-1.5 text-foreground">
               <span className="text-2xl font-bold tabular-nums leading-none">{value}</span>
               {targetUnit ? (
-                <span className="ml-1 text-sm text-muted-foreground">{targetUnit}</span>
+                <span className="text-xs text-muted-foreground">{targetUnit}</span>
               ) : null}
             </div>
           ) : null}
+
+          {kind === "binary" ? (
+            <div className="flex items-center gap-1.5 text-sm font-bold text-primary">
+              <CircleCheckIcon className="size-4" />
+              Marked done
+            </div>
+          ) : null}
+
+          {kind === "checklist" && checked_items && channelItems ? (
+            <div className="space-y-1.5">
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold tabular-nums leading-none text-foreground">
+                  {checked_items.length}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  / {channelItems.length} done
+                </span>
+              </div>
+              <ul className="space-y-0.5 text-sm">
+                {channelItems.map((item, idx) => {
+                  const done = checked_items.includes(idx);
+                  return (
+                    <li
+                      key={idx}
+                      className={cn(
+                        "flex items-center gap-2",
+                        done ? "text-foreground" : "text-muted-foreground/60",
+                      )}
+                    >
+                      <CircleCheckIcon
+                        className={cn(
+                          "size-3.5 shrink-0",
+                          done ? "text-primary" : "opacity-30",
+                        )}
+                      />
+                      <span className={cn(done ? "" : "line-through opacity-70")}>{item}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
+
           {note ? <p className="text-sm text-muted-foreground">{note}</p> : null}
+
           <ReactionBar
             reactions={reactions ?? []}
             onToggle={(emoji, reactedByMe) => onToggleReaction(checkin.id, emoji, reactedByMe)}

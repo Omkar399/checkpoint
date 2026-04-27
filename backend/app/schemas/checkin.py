@@ -9,6 +9,14 @@ from app.schemas.user import UserResponse
 class CheckInCreate(BaseModel):
     value: Optional[float] = None
     note: Optional[str] = None
+    checked_items: Optional[list[int]] = None  # for checklist kind
+
+
+class ReactionSummaryInline(BaseModel):
+    emoji: str
+    count: int
+    users: list[str]
+    reacted_by_me: bool = False
 
 
 class CheckInResponse(BaseModel):
@@ -19,8 +27,10 @@ class CheckInResponse(BaseModel):
     channel_id: int
     value: Optional[float] = None
     note: Optional[str] = None
+    checked_items: Optional[list[int]] = None
     checked_in_at: datetime
     user: UserResponse
+    reactions: list[ReactionSummaryInline] = []
 
 
 class DailyStatusEntry(BaseModel):

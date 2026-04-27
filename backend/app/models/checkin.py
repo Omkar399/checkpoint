@@ -14,6 +14,7 @@ class CheckIn(Base):
     channel_id = Column(Integer, ForeignKey("channels.id"), nullable=False)
     value = Column(Float, nullable=True)
     note = Column(Text, nullable=True)
+    checked_items = Column(Text, nullable=True)  # JSON array of indices for checklist kind
     checked_in_at = Column(
         DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
     )
@@ -30,3 +31,4 @@ class CheckIn(Base):
 
     user = relationship("User", foreign_keys=[user_id])
     channel = relationship("Channel", foreign_keys=[channel_id])
+    reactions = relationship("Reaction", back_populates="checkin", cascade="all, delete-orphan")

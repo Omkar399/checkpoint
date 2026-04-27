@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.invite import Invite
 from app.models.membership import ServerMember
 from app.models.server import Server
+from app.models.user import User
 
 
 def _generate_code(length: int = 8) -> str:
@@ -79,5 +80,11 @@ def use_invite(db: Session, code: str, user_id: int) -> Server | None:
 
     invite.use_count += 1
     db.commit()
+
+    # Send Coach Bot welcome message
+    from app.services import coachbot_service
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        coachbot_service.send_welcome_message(db, invite.server_id, user.username)
 
     return db.query(Server).filter(Server.id == invite.server_id).first()

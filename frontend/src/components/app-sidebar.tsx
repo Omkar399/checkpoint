@@ -19,6 +19,73 @@ function firstInitial(name: string) {
   return cleaned[0].toUpperCase();
 }
 
+interface RailItemProps {
+  href?: string;
+  onClick?: () => void;
+  isActive: boolean;
+  ariaLabel: string;
+  title: string;
+  children: React.ReactNode;
+}
+
+function RailItem({ href, onClick, isActive, ariaLabel, title, children }: RailItemProps) {
+  const inner = (
+    <>
+      {/* Active indicator pill */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          "absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-r-full bg-primary transition-all duration-300 ease-out",
+          isActive
+            ? "h-7 opacity-100"
+            : "h-2 opacity-0 group-hover/rail-item:opacity-50",
+        )}
+      />
+      <span
+        className={cn(
+          "relative flex size-10 items-center justify-center text-sm font-bold transition-all duration-200 ease-out overflow-hidden outline-none",
+          "focus-visible:ring-2 focus-visible:ring-primary",
+          isActive
+            ? "rounded-2xl bg-primary text-primary-foreground"
+            : "rounded-full bg-[color:var(--color-ink-200)] text-muted-foreground group-hover/rail-item:rounded-2xl group-hover/rail-item:bg-[color:var(--color-ink-300)] group-hover/rail-item:text-foreground",
+        )}
+      >
+        {children}
+      </span>
+    </>
+  );
+
+  const wrapperClass = "group/rail-item relative flex w-full items-center justify-center";
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        onClick={onClick}
+        aria-label={ariaLabel}
+        aria-current={isActive ? "page" : undefined}
+        title={title}
+        className={wrapperClass}
+      >
+        {inner}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      aria-current={isActive ? "page" : undefined}
+      title={title}
+      className={wrapperClass}
+    >
+      {inner}
+    </button>
+  );
+}
+
 function userInitialsFor(name: string) {
   const cleaned = name.trim();
   if (!cleaned) return "?";
@@ -137,19 +204,14 @@ export function AppSidebar() {
     <aside className="flex h-dvh shrink-0 bg-sidebar">
       {/* Server rail (64px) */}
       <div className="flex w-16 flex-col items-center gap-2 overflow-hidden border-r border-[color:var(--color-ink-200)] py-3">
-        <Link
+        <RailItem
           href="/dashboard"
-          aria-label="Dashboard"
-          className={cn(
-            "flex size-10 items-center justify-center rounded-full transition-colors outline-none",
-            "focus-visible:ring-2 focus-visible:ring-primary",
-            route.onDashboard
-              ? "bg-[color:var(--color-ink-200)] text-foreground ring-2 ring-primary"
-              : "text-muted-foreground hover:bg-[color:var(--color-ink-100)] hover:text-foreground",
-          )}
+          isActive={route.onDashboard}
+          ariaLabel="Dashboard"
+          title="Dashboard"
         >
           <Home className="size-4" />
-        </Link>
+        </RailItem>
         <div className="my-1 h-px w-6 bg-[color:var(--color-ink-200)]" aria-hidden="true" />
         <div className="flex w-full flex-1 flex-col items-center gap-2 overflow-y-auto overflow-x-hidden px-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
           {serversLoading ? (
@@ -157,7 +219,7 @@ export function AppSidebar() {
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
-                  className="size-10 animate-pulse rounded-full bg-[color:var(--color-ink-200)]"
+                  className="size-10 animate-pulse rounded-2xl bg-[color:var(--color-ink-200)]"
                 />
               ))}
             </div>
@@ -167,37 +229,27 @@ export function AppSidebar() {
             </span>
           ) : (
             servers.map((server) => {
-              const isSelected = server.id === selectedServerId;
               const isActive = server.id === activeServerId;
               return (
-                <button
+                <RailItem
                   key={server.id}
-                  type="button"
+                  href={`/server/${server.id}`}
                   onClick={() => handleSelectServer(server.id)}
-                  aria-label={server.name}
-                  aria-current={isActive ? "page" : undefined}
+                  isActive={isActive}
+                  ariaLabel={server.name}
                   title={server.name}
-                  className={cn(
-                    "flex size-10 items-center justify-center rounded-full text-sm font-bold transition-all outline-none overflow-hidden",
-                    "focus-visible:ring-2 focus-visible:ring-primary",
-                    isActive
-                      ? "bg-[color:var(--color-ink-200)] text-foreground ring-2 ring-primary"
-                      : isSelected
-                        ? "bg-[color:var(--color-ink-200)] text-foreground"
-                        : "bg-transparent text-muted-foreground hover:bg-[color:var(--color-ink-100)] hover:text-foreground",
-                  )}
                 >
                   {server.icon_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={server.icon_url}
                       alt={server.name}
-                      className="size-full rounded-full object-cover"
+                      className="size-full rounded-[inherit] object-cover"
                     />
                   ) : (
                     <span>{firstInitial(server.name)}</span>
                   )}
-                </button>
+                </RailItem>
               );
             })
           )}
@@ -261,13 +313,19 @@ export function AppSidebar() {
                     href={`/server/${channel.server_id}/channel/${channel.id}`}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "group flex items-center gap-1.5 rounded px-3 py-1.5 text-sm transition-colors",
+                      "group/channel relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-all duration-150",
                       isActive
                         ? "bg-[color:var(--color-ink-200)] font-bold text-foreground"
-                        : "font-normal text-muted-foreground hover:text-foreground",
+                        : "font-normal text-muted-foreground hover:bg-[color:var(--color-ink-100)] hover:text-foreground hover:translate-x-0.5",
                     )}
                   >
-                    <Hash className="size-3.5 shrink-0 opacity-70" />
+                    {isActive ? (
+                      <span
+                        aria-hidden="true"
+                        className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-primary"
+                      />
+                    ) : null}
+                    <Hash className={cn("size-3.5 shrink-0 transition-colors", isActive ? "text-primary" : "opacity-70")} />
                     <span className="truncate">{channel.name}</span>
                   </Link>
                 );

@@ -13,26 +13,30 @@ export function WeekPulse({ data, className }: WeekPulseProps) {
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <div className="flex items-end gap-1.5 h-12">
+      {/* Bars row — height-locked so % heights resolve */}
+      <div className="flex h-12 items-stretch gap-1.5">
         {data.map((d) => {
-          const heightPct = d.count === 0 ? 8 : Math.max(20, (d.count / max) * 100);
+          const heightPct =
+            d.count === 0 ? 8 : Math.max(20, (d.count / max) * 100);
           const filled = d.count > 0;
           return (
             <div
               key={d.date}
-              className="flex-1 min-w-0 flex flex-col items-center gap-1.5"
+              className="flex flex-1 min-w-0 items-end"
               title={`${d.date}: ${d.count} check-in${d.count === 1 ? "" : "s"}`}
             >
-              <div className="flex-1 w-full flex items-end">
-                <div
-                  className={cn(
-                    "w-full rounded-sm transition-all",
-                    filled ? "bg-primary" : "bg-[color:var(--color-ink-300)]",
-                    d.isToday && filled ? "shadow-[0_0_12px_-2px_rgba(30,215,96,0.6)]" : null,
-                  )}
-                  style={{ height: `${heightPct}%` }}
-                />
-              </div>
+              <div
+                className={cn(
+                  "w-full rounded-sm transition-all",
+                  filled
+                    ? "bg-primary"
+                    : "bg-[color:var(--color-ink-300)]",
+                  d.isToday && filled
+                    ? "shadow-[0_0_12px_-2px_rgba(30,215,96,0.6)]"
+                    : null,
+                )}
+                style={{ height: `${heightPct}%` }}
+              />
             </div>
           );
         })}

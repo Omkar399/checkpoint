@@ -6,6 +6,7 @@ from app.models.channel import Channel
 from app.models.channel_member import ChannelMember
 from app.models.message import Message
 from app.models.checkin import CheckIn
+from app.models.reaction import Reaction
 
 __all__ = [
     "User",
@@ -16,4 +17,5 @@ __all__ = [
     "ChannelMember",
     "Message",
     "CheckIn",
+    "Reaction",
 ]

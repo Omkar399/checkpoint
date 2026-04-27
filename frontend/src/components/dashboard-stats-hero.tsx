@@ -24,9 +24,9 @@ function StatTile({ label, value, suffix, icon, accent = "default", large }: Sta
   return (
     <div
       className={
-        "relative flex flex-col justify-between overflow-hidden rounded-lg bg-card p-5 transition-colors hover:bg-[color:var(--color-ink-300)]" +
+        "lift-on-hover relative flex flex-col justify-between overflow-hidden rounded-lg bg-card p-5 hover:bg-[color:var(--color-ink-300)]" +
         (accent === "fire"
-          ? " ring-1 ring-primary/30 shadow-[0_0_30px_-12px_rgba(30,215,96,0.4)]"
+          ? " ring-1 ring-primary/30 shadow-[0_0_30px_-12px_rgba(30,215,96,0.4)] hover:shadow-[0_0_40px_-10px_rgba(30,215,96,0.5)]"
           : "") +
         (large ? " min-h-[160px]" : "")
       }
@@ -115,7 +115,7 @@ export function DashboardStatsHero({ fallbackName }: DashboardStatsHeroProps) {
         </h1>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
+      <div className="anim-stagger grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
         <StatTile
           label="Current streak"
           value={stats?.currentStreak ?? 0}

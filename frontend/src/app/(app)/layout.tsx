@@ -17,10 +17,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!token) return null;
 
   return (
-    <div className="flex min-h-dvh bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background">
       <AppSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <main className="flex-1 overflow-y-auto bg-background">{children}</main>
+        <main className="flex-1 min-h-0 overflow-hidden bg-background">{children}</main>
       </div>
     </div>
   );

@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useParams } from "next/navigation";
 import { CircleCheckIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getChannel } from "@/lib/api/channels";
+import { getChannel, joinChannel } from "@/lib/api/channels";
 import { getMessages } from "@/lib/api/messages";
 import { getCheckins, getDashboard, getStreak, createCheckin } from "@/lib/api/checkins";
 import { addReaction, removeReaction as removeReactionApi } from "@/lib/api/reactions";
@@ -73,6 +73,11 @@ export default function ChannelPage() {
   const [profileUserId, setProfileUserId] = useState<number | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [pulse, setPulse] = useState<WeekDayPulse[] | null>(null);
+  const [joined, setJoined] = useState(false);
+  const [feedFilter, setFeedFilter] = useState<"today" | "all">("today");
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const stickToBottomRef = useRef(true);
 
   const openProfile = useCallback((userId: number) => {
     setProfileUserId(userId);
@@ -84,6 +89,12 @@ export default function ChannelPage() {
     let cancelled = false;
     async function load(id: number) {
       try {
+        // Ensure channel membership before loading member-gated endpoints
+        // and before opening the WebSocket (which also requires membership).
+        // Idempotent: backend returns existing membership if already joined.
+        await joinChannel(id).catch(() => {});
+        if (cancelled) return;
+        setJoined(true);
         const [ch, msgs, dash, cis, streakRes] = await Promise.all([
           getChannel(id),
           getMessages(id),
@@ -103,6 +114,7 @@ export default function ChannelPage() {
         if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load channel.");
       }
     }
+    setJoined(false);
     load(channelId);
     return () => {
       cancelled = true;
@@ -215,13 +227,56 @@ export default function ChannelPage() {
     removeReaction,
     connected,
     connectionType,
-  } = useWebSocket(channelId, { onMessage, onReaction });
+  } = useWebSocket(joined ? channelId : null, { onMessage, onReaction });
 
-  const feed = useMemo(() => {
+  const fullFeed = useMemo(() => {
     const combined: Array<Message | CheckInFeedItem> = [...messages, ...checkins];
     combined.sort((a, b) => getTimestamp(a) - getTimestamp(b));
     return combined;
   }, [messages, checkins]);
+
+  const todayStart = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }, []);
+
+  const feed = useMemo(() => {
+    if (feedFilter === "all") return fullFeed;
+    return fullFeed.filter((item) => getTimestamp(item) >= todayStart);
+  }, [fullFeed, feedFilter, todayStart]);
+
+  const todayCount = useMemo(
+    () => fullFeed.filter((item) => getTimestamp(item) >= todayStart).length,
+    [fullFeed, todayStart],
+  );
+
+  // Track whether user is near bottom; if so, stick to bottom on new items
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottomRef.current = distanceFromBottom < 80;
+  }, []);
+
+  // Scroll to bottom on initial load (after feed first populates) and on filter change
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (feed.length === 0) return;
+    el.scrollTop = el.scrollHeight;
+    stickToBottomRef.current = true;
+    // intentionally only depend on feedFilter and feed length transitions
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedFilter, feed.length === 0]);
+
+  // Auto-scroll on new items if user was near the bottom
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (!stickToBottomRef.current) return;
+    el.scrollTop = el.scrollHeight;
+  }, [feed.length]);
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -231,16 +286,17 @@ export default function ChannelPage() {
     setDraft("");
   }
 
-  async function handleCheckinSubmit(value: number | null, note: string | null) {
+  async function handleCheckinSubmit(
+    value: number | null,
+    note: string | null,
+    checkedItems?: number[] | null,
+  ) {
     if (!channelId) return;
-    // Prefer WebSocket when connected (server will echo back as new_checkin).
     if (connected && connectionType === "websocket") {
-      // useWebSocket.sendCheckin via hook below
-      sendCheckin(value, note);
+      sendCheckin(value, note, checkedItems);
       return;
     }
-    // Fallback: REST
-    const res = await createCheckin(channelId, { value, note });
+    const res = await createCheckin(channelId, { value, note, checked_items: checkedItems });
     const data = res.data;
     setCheckins((prev) => {
       if (prev.some((c) => c.id === data.id)) return prev;
@@ -281,89 +337,123 @@ export default function ChannelPage() {
     : "bg-destructive";
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8 pb-40">
-      {/* Header */}
-      <section className="flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Channel
-            </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-4xl font-bold tracking-tight text-foreground">
-                {channel ? `#${channel.name}` : "Loading…"}
-              </h1>
-              <StreakBadge days={streak} size="md" />
+    <div className="flex h-full min-h-0">
+      {/* Main column (header + feed + composer) */}
+      <div className="flex h-full min-w-0 flex-1 flex-col">
+        {/* Header — fixed top */}
+        <header className="shrink-0 border-b border-border bg-background px-6 pt-6 pb-4">
+          <div className="mx-auto flex w-full max-w-4xl flex-col gap-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Channel
+                </p>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">
+                    {channel ? `#${channel.name}` : "Loading…"}
+                  </h1>
+                  <StreakBadge days={streak} size="sm" />
+                </div>
+                {channel?.description ? (
+                  <p className="line-clamp-1 text-xs text-muted-foreground max-w-2xl">
+                    {channel.description}
+                  </p>
+                ) : null}
+              </div>
+              <span
+                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[color:var(--color-ink-200)] px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground"
+                title={`Connection: ${statusLabel}`}
+              >
+                <span className={cn("size-1.5 rounded-full", statusDotClass)} aria-hidden="true" />
+                <span className="uppercase tracking-wider">{statusLabel}</span>
+              </span>
             </div>
-            {channel?.description ? (
-              <p className="text-sm text-muted-foreground max-w-2xl">{channel.description}</p>
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {/* Daily dashboard pills inline in header */}
+            {dashboard.length > 0 ? (
+              <div className="flex items-center gap-2 overflow-x-auto py-1.5">
+                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Today {checkedInCount}/{dashboard.length}
+                </span>
+                <div className="flex gap-1.5 py-0.5">
+                  {dashboard.map((entry) => (
+                    <button
+                      key={entry.user_id}
+                      type="button"
+                      onClick={() => openProfile(entry.user_id)}
+                      className={cn(
+                        "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        entry.checked_in
+                          ? "bg-primary/15 text-foreground ring-1 ring-primary/40 hover:bg-primary/20"
+                          : "bg-[color:var(--color-ink-200)] text-muted-foreground hover:bg-[color:var(--color-ink-300)] hover:text-foreground",
+                      )}
+                    >
+                      {entry.username}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : null}
           </div>
-          <span
-            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[color:var(--color-ink-200)] px-3 py-1 text-xs font-semibold text-muted-foreground"
-            title={`Connection: ${statusLabel}`}
-          >
-            <span className={cn("size-1.5 rounded-full", statusDotClass)} aria-hidden="true" />
-            <span className="uppercase tracking-wider">{statusLabel}</span>
-          </span>
-        </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        {pulse ? (
-          <div className="rounded-lg bg-card p-4 max-w-md">
-            <div className="mb-2.5 flex items-baseline justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Your week
-              </span>
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {pulse.reduce((s, d) => s + d.count, 0)} check-ins
-              </span>
-            </div>
-            <WeekPulse data={pulse} />
-          </div>
-        ) : null}
-      </section>
+        </header>
 
-      {/* Daily dashboard */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          Today — {checkedInCount} / {dashboard.length} checked in
-        </h2>
-        <ul className="flex flex-wrap gap-2">
-          {dashboard.map((entry) => (
-            <li key={entry.user_id}>
+        {/* Feed filter bar */}
+        <div className="shrink-0 border-b border-border bg-background px-6 py-2">
+          <div className="mx-auto flex w-full max-w-4xl items-center gap-2">
+            <div className="flex items-center gap-1 rounded-full bg-[color:var(--color-ink-200)] p-0.5">
               <button
                 type="button"
-                onClick={() => openProfile(entry.user_id)}
+                onClick={() => setFeedFilter("today")}
                 className={cn(
-                  "rounded-full px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  entry.checked_in
-                    ? "bg-primary/15 text-foreground ring-1 ring-primary/40 hover:bg-primary/20"
-                    : "bg-[color:var(--color-ink-200)] text-muted-foreground hover:bg-[color:var(--color-ink-300)] hover:text-foreground",
+                  "rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors",
+                  feedFilter === "today"
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                {entry.username}
+                Today
+                <span className="ml-1.5 tabular-nums opacity-70">{todayCount}</span>
               </button>
-            </li>
-          ))}
-          {dashboard.length === 0 ? (
-            <li className="text-sm text-muted-foreground">No members yet.</li>
-          ) : null}
-        </ul>
-      </section>
+              <button
+                type="button"
+                onClick={() => setFeedFilter("all")}
+                className={cn(
+                  "rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors",
+                  feedFilter === "all"
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                All time
+                <span className="ml-1.5 tabular-nums opacity-70">{fullFeed.length}</span>
+              </button>
+            </div>
+            {feedFilter === "today" && todayCount > 0 ? (
+              <span className="text-[11px] text-muted-foreground">
+                Showing today only · switch to <button type="button" onClick={() => setFeedFilter("all")} className="underline underline-offset-2 hover:text-foreground">all time</button> for history
+              </span>
+            ) : null}
+          </div>
+        </div>
 
-      {/* Feed + Leaderboard */}
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <section className="flex min-h-[360px] flex-col bg-background">
-          <ul className="flex-1 space-y-1 overflow-y-auto text-sm">
+        {/* Feed — scrolls */}
+        <div ref={scrollRef} onScroll={handleScroll} className="flex-1 min-h-0 overflow-y-auto">
+          <ul className="mx-auto w-full max-w-4xl space-y-1 px-6 py-6 text-sm">
             {feed.length === 0 ? (
-              <li className="text-muted-foreground">No messages yet.</li>
+              <li className="rounded-lg bg-card p-6 text-center text-sm text-muted-foreground">
+                {feedFilter === "today"
+                  ? "No check-ins yet today. Be the first."
+                  : "No messages yet. Be the first to check in."}
+              </li>
             ) : (
               feed.map((item) =>
                 isCheckin(item) ? (
                   <li key={`checkin-${item.id}`} className="py-1">
                     <CheckInCard
                       checkin={item}
+                      kind={channel?.kind ?? "numeric"}
                       targetUnit={channel?.target_unit ?? null}
+                      channelItems={channel?.items ?? null}
                       onToggleReaction={handleToggleReaction}
                       onUserClick={openProfile}
                     />
@@ -406,40 +496,59 @@ export default function ChannelPage() {
               )
             )}
           </ul>
-        </section>
+        </div>
 
-        <aside>
-          <LeaderboardPanel channelId={channelId} />
-        </aside>
-      </div>
-
-      {/* Composer — fixed to bottom of viewport section */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background">
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-6 py-3 lg:pr-[calc(300px+1.5rem+2rem)]">
-          <CheckInDialog
-            targetUnit={channel?.target_unit ?? null}
-            targetLabel={channel?.target_label ?? null}
-            onSubmit={handleCheckinSubmit}
-            trigger={
-              <Button type="button" variant="outline" size="sm">
-                <CircleCheckIcon className="size-3.5" />
-                Check in
-              </Button>
-            }
-          />
-          <form onSubmit={onSubmit} className="flex flex-1 items-center gap-2">
-            <Input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder={connected ? "Send a message" : "Connecting…"}
-              disabled={!connected}
+        {/* Composer — pinned bottom */}
+        <div className="shrink-0 border-t border-border bg-background">
+          <div className="mx-auto flex w-full max-w-4xl items-center gap-2 px-6 py-3">
+            <CheckInDialog
+              kind={channel?.kind ?? "numeric"}
+              targetUnit={channel?.target_unit ?? null}
+              targetLabel={channel?.target_label ?? null}
+              onSubmit={handleCheckinSubmit}
+              trigger={
+                <Button type="button" variant="outline" size="sm">
+                  <CircleCheckIcon className="size-3.5" />
+                  {channel?.kind === "binary"
+                    ? "Mark done"
+                    : channel?.kind === "freeform"
+                      ? "Reflect"
+                      : "Check in"}
+                </Button>
+              }
             />
-            <Button type="submit" disabled={!connected || draft.trim().length === 0}>
-              Send
-            </Button>
-          </form>
+            <form onSubmit={onSubmit} className="flex flex-1 items-center gap-2">
+              <Input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder={connected ? "Send a message" : "Connecting…"}
+                disabled={!connected}
+              />
+              <Button type="submit" disabled={!connected || draft.trim().length === 0}>
+                Send
+              </Button>
+            </form>
+          </div>
         </div>
       </div>
+
+      {/* Right rail — leaderboard + week pulse */}
+      <aside className="hidden h-full w-[320px] shrink-0 flex-col gap-5 overflow-y-auto border-l border-border bg-[color:var(--color-ink-50)] p-5 lg:flex">
+        {pulse ? (
+          <div className="rounded-lg bg-card p-4">
+            <div className="mb-2.5 flex items-baseline justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Your week
+              </span>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {pulse.reduce((s, d) => s + d.count, 0)} check-ins
+              </span>
+            </div>
+            <WeekPulse data={pulse} />
+          </div>
+        ) : null}
+        <LeaderboardPanel channelId={channelId} />
+      </aside>
 
       <UserProfileDialog
         userId={profileUserId}
@@ -447,6 +556,6 @@ export default function ChannelPage() {
         open={profileOpen}
         onOpenChange={setProfileOpen}
       />
-    </main>
+    </div>
   );
 }

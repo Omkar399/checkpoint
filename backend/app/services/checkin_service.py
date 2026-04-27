@@ -1,11 +1,13 @@
+import json
 from datetime import datetime, date, timezone, timedelta
 
-from sqlalchemy import func, cast, Date
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.checkin import CheckIn
 from app.models.channel_member import ChannelMember
 from app.models.user import User
+from app.models.reaction import Reaction
 
 
 def create_checkin(
@@ -14,22 +16,36 @@ def create_checkin(
     channel_id: int,
     value: float | None = None,
     note: str | None = None,
+    checked_items: list[int] | None = None,
 ) -> CheckIn:
     checkin = CheckIn(
         user_id=user_id,
         channel_id=channel_id,
         value=value,
         note=note,
+        checked_items=json.dumps(checked_items) if checked_items is not None else None,
     )
     db.add(checkin)
     db.commit()
     db.refresh(checkin)
     return (
         db.query(CheckIn)
-        .options(joinedload(CheckIn.user))
+        .options(joinedload(CheckIn.user), joinedload(CheckIn.reactions).joinedload(Reaction.user))
         .filter(CheckIn.id == checkin.id)
         .first()
     )
+
+
+def parse_checked_items(raw: str | None) -> list[int] | None:
+    if not raw:
+        return None
+    try:
+        parsed = json.loads(raw)
+        if isinstance(parsed, list):
+            return [int(i) for i in parsed if isinstance(i, (int, float)) and not isinstance(i, bool)]
+    except (json.JSONDecodeError, ValueError, TypeError):
+        return None
+    return None
 
 
 def get_channel_checkins(
@@ -40,7 +56,7 @@ def get_channel_checkins(
 ) -> list[CheckIn]:
     query = (
         db.query(CheckIn)
-        .options(joinedload(CheckIn.user))
+        .options(joinedload(CheckIn.user), joinedload(CheckIn.reactions).joinedload(Reaction.user))
         .filter(CheckIn.channel_id == channel_id)
     )
     if target_date is not None:
@@ -113,8 +129,9 @@ def get_user_heatmap(
     start = datetime(year, 1, 1)
     end = datetime(year + 1, 1, 1)
 
+    day_expr = func.date(CheckIn.checked_in_at)
     query = db.query(
-        cast(CheckIn.checked_in_at, Date).label("date"),
+        day_expr.label("day"),
         func.count(CheckIn.id).label("count"),
     ).filter(
         CheckIn.user_id == user_id,
@@ -125,28 +142,41 @@ def get_user_heatmap(
     if channel_id is not None:
         query = query.filter(CheckIn.channel_id == channel_id)
 
-    rows = query.group_by(cast(CheckIn.checked_in_at, Date)).all()
+    rows = query.group_by(day_expr).all()
 
-    return [{"date": row.date.isoformat(), "count": row.count} for row in rows]
+    def _to_iso(v) -> str:
+        if isinstance(v, str):
+            return v
+        if hasattr(v, "isoformat"):
+            return v.isoformat()
+        return str(v)
+
+    return [{"date": _to_iso(row.day), "count": row.count} for row in rows]
 
 
 def get_user_streak(db: Session, user_id: int, channel_id: int) -> int:
+    day_expr = func.date(CheckIn.checked_in_at)
     rows = (
-        db.query(cast(CheckIn.checked_in_at, Date).label("d"))
+        db.query(day_expr.label("d"))
         .filter(
             CheckIn.user_id == user_id,
             CheckIn.channel_id == channel_id,
         )
-        .group_by(cast(CheckIn.checked_in_at, Date))
-        .order_by(cast(CheckIn.checked_in_at, Date).desc())
+        .group_by(day_expr)
+        .order_by(day_expr.desc())
         .all()
     )
 
     if not rows:
         return 0
 
+    def _to_date(v) -> date:
+        if isinstance(v, date):
+            return v
+        return date.fromisoformat(str(v))
+
     today = datetime.now(timezone.utc).date()
-    dates = [row.d for row in rows]
+    dates = [_to_date(row.d) for row in rows]
 
     # Streak must include today or yesterday to be active
     if dates[0] != today and dates[0] != today - timedelta(days=1):

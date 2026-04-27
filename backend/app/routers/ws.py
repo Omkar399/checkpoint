@@ -1,21 +1,13 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models.user import User
 from app.services.auth_service import decode_access_token
-from app.services import channel_service, message_service, checkin_service
+from app.services import channel_service, message_service, checkin_service, reaction_service
 from app.ws.manager import manager
 
 router = APIRouter(prefix="/api/v1", tags=["websocket"])
-
-
-def _get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.websocket("/ws/{channel_id}")
@@ -77,7 +69,6 @@ async def websocket_endpoint(
                 if not content:
                     continue
 
-                # Create message in DB
                 db = SessionLocal()
                 try:
                     msg = message_service.create_message(
@@ -113,22 +104,36 @@ async def websocket_endpoint(
             elif data.get("type") == "send_checkin":
                 db = SessionLocal()
                 try:
+                    raw_items = data.get("checked_items")
+                    parsed_items: list[int] | None = None
+                    if isinstance(raw_items, list):
+                        parsed_items = [
+                            int(i) for i in raw_items
+                            if isinstance(i, (int, float)) and not isinstance(i, bool)
+                        ]
                     checkin = checkin_service.create_checkin(
                         db,
                         user_id=user_id,
                         channel_id=channel_id,
                         value=data.get("value"),
                         note=data.get("note"),
+                        checked_items=parsed_items,
                     )
                     checkin_data = {
                         "type": "new_checkin",
-                        "checkin": {
-                            "id": checkin.id,
+                        "message": {
+                            "id": f"checkin-{checkin.id}",
+                            "checkin_id": checkin.id,
                             "channel_id": checkin.channel_id,
                             "user_id": checkin.user_id,
                             "value": checkin.value,
                             "note": checkin.note,
-                            "checked_in_at": checkin.checked_in_at.isoformat(),
+                            "checked_items": checkin_service.parse_checked_items(
+                                checkin.checked_items
+                            ),
+                            "message_type": "checkin",
+                            "created_at": checkin.checked_in_at.isoformat(),
+                            "reactions": [],
                             "user": {
                                 "id": checkin.user.id,
                                 "email": checkin.user.email,
@@ -142,6 +147,58 @@ async def websocket_endpoint(
                     db.close()
 
                 await manager.broadcast(channel_id, checkin_data)
+
+            elif data.get("type") == "add_reaction":
+                checkin_id = data.get("checkin_id")
+                emoji = data.get("emoji")
+                if not checkin_id or not emoji:
+                    continue
+
+                db = SessionLocal()
+                try:
+                    reaction = reaction_service.add_reaction(
+                        db, checkin_id=checkin_id, user_id=user_id, emoji=emoji
+                    )
+                    reaction_data = {
+                        "type": "reaction_added",
+                        "checkin_id": checkin_id,
+                        "reaction": {
+                            "id": reaction.id,
+                            "checkin_id": reaction.checkin_id,
+                            "user_id": reaction.user_id,
+                            "emoji": reaction.emoji,
+                            "username": reaction.user.username,
+                        },
+                    }
+                finally:
+                    db.close()
+
+                await manager.broadcast(channel_id, reaction_data)
+
+            elif data.get("type") == "remove_reaction":
+                checkin_id = data.get("checkin_id")
+                emoji = data.get("emoji")
+                if not checkin_id or not emoji:
+                    continue
+
+                db = SessionLocal()
+                try:
+                    removed = reaction_service.remove_reaction(
+                        db, checkin_id=checkin_id, user_id=user_id, emoji=emoji
+                    )
+                finally:
+                    db.close()
+
+                if removed:
+                    await manager.broadcast(
+                        channel_id,
+                        {
+                            "type": "reaction_removed",
+                            "checkin_id": checkin_id,
+                            "user_id": user_id,
+                            "emoji": emoji,
+                        },
+                    )
 
     except WebSocketDisconnect:
         manager.disconnect(websocket, channel_id)

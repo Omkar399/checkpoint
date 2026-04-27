@@ -29,6 +29,8 @@ export interface ServerMember {
   user: User;
 }
 
+export type ChannelKind = "numeric" | "binary" | "freeform" | "checklist";
+
 export interface Channel {
   id: number;
   server_id: number;
@@ -36,6 +38,8 @@ export interface Channel {
   description: string | null;
   target_unit: string | null;
   target_label: string | null;
+  kind: ChannelKind;
+  items: string[] | null;
   created_by: number;
   created_at: string;
 }
@@ -71,6 +75,7 @@ export interface CheckIn {
   channel_id: number;
   value: number | null;
   note: string | null;
+  checked_items: number[] | null;
   checked_in_at: string;
   user: User;
   reactions: ReactionSummary[];
@@ -79,6 +84,7 @@ export interface CheckIn {
 export interface CheckInCreate {
   value?: number | null;
   note?: string | null;
+  checked_items?: number[] | null;
 }
 
 export interface DailyStatusEntry {
@@ -127,6 +133,8 @@ export interface CreateChannelRequest {
   description?: string | null;
   target_unit?: string | null;
   target_label?: string | null;
+  kind?: ChannelKind;
+  items?: string[] | null;
 }
 
 export type WsEvent =

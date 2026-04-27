@@ -28,6 +28,11 @@ def create_channel(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the server owner can create channels",
         )
+    if req.kind == "checklist" and (not req.items or len(req.items) == 0):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Checklist channels require at least one item.",
+        )
     channel = channel_service.create_channel(
         db,
         server_id=server_id,
@@ -35,6 +40,8 @@ def create_channel(
         description=req.description,
         target_unit=req.target_unit,
         target_label=req.target_label,
+        kind=req.kind,
+        items=req.items if req.kind == "checklist" else None,
         created_by=current_user.id,
     )
     return channel

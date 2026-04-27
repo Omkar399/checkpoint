@@ -9,6 +9,7 @@ from app.schemas.checkin import (
     CheckInCreate,
     CheckInResponse,
     DailyStatusEntry,
+    ReactionSummaryInline,
 )
 from app.services import channel_service, checkin_service
 
@@ -31,6 +32,30 @@ def _require_channel_member(db: Session, user_id: int, channel_id: int):
     return channel
 
 
+def _serialize_checkin(checkin, current_user_id: int) -> dict:
+    """Serialize a check-in with aggregated reactions."""
+    emoji_map: dict[str, dict] = {}
+    for r in (checkin.reactions or []):
+        if r.emoji not in emoji_map:
+            emoji_map[r.emoji] = {"emoji": r.emoji, "count": 0, "users": [], "reacted_by_me": False}
+        emoji_map[r.emoji]["count"] += 1
+        emoji_map[r.emoji]["users"].append(r.user.username)
+        if r.user_id == current_user_id:
+            emoji_map[r.emoji]["reacted_by_me"] = True
+
+    return {
+        "id": checkin.id,
+        "user_id": checkin.user_id,
+        "channel_id": checkin.channel_id,
+        "value": checkin.value,
+        "note": checkin.note,
+        "checked_items": checkin_service.parse_checked_items(checkin.checked_items),
+        "checked_in_at": checkin.checked_in_at,
+        "user": checkin.user,
+        "reactions": list(emoji_map.values()),
+    }
+
+
 @router.post(
     "/channels/{channel_id}/checkins", response_model=CheckInResponse
 )
@@ -47,8 +72,9 @@ def create_checkin(
         channel_id=channel_id,
         value=req.value,
         note=req.note,
+        checked_items=req.checked_items,
     )
-    return checkin
+    return _serialize_checkin(checkin, current_user.id)
 
 
 @router.get(
@@ -62,9 +88,10 @@ def get_checkins(
     current_user: User = Depends(get_current_user),
 ):
     _require_channel_member(db, current_user.id, channel_id)
-    return checkin_service.get_channel_checkins(
+    checkins = checkin_service.get_channel_checkins(
         db, channel_id=channel_id, target_date=date, limit=limit
     )
+    return [_serialize_checkin(ci, current_user.id) for ci in checkins]
 
 
 @router.get(

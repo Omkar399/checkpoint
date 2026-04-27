@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -15,6 +15,8 @@ class Channel(Base):
     description = Column(String(500), nullable=True)
     target_unit = Column(String(50), nullable=True)
     target_label = Column(String(100), nullable=True)
+    kind = Column(String(20), nullable=False, default="numeric", server_default="numeric")
+    items = Column(Text, nullable=True)  # JSON array of strings for checklist kind
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(
         DateTime, default=lambda: datetime.now(timezone.utc), nullable=False

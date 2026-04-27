@@ -1,9 +1,13 @@
+import json
 from datetime import datetime
-from typing import Optional
+from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.user import UserResponse
+
+
+ChannelKind = Literal["numeric", "binary", "freeform", "checklist"]
 
 
 class CreateChannelRequest(BaseModel):
@@ -11,6 +15,8 @@ class CreateChannelRequest(BaseModel):
     description: Optional[str] = None
     target_unit: Optional[str] = None
     target_label: Optional[str] = None
+    kind: ChannelKind = "numeric"
+    items: Optional[list[str]] = None  # required when kind == "checklist"
 
 
 class ChannelResponse(BaseModel):
@@ -22,8 +28,23 @@ class ChannelResponse(BaseModel):
     description: Optional[str] = None
     target_unit: Optional[str] = None
     target_label: Optional[str] = None
+    kind: ChannelKind = "numeric"
+    items: Optional[list[str]] = None
     created_by: int
     created_at: datetime
+
+    @field_validator("items", mode="before")
+    @classmethod
+    def _decode_items(cls, v: Any) -> Any:
+        if v is None or isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            try:
+                parsed = json.loads(v)
+                return parsed if isinstance(parsed, list) else None
+            except json.JSONDecodeError:
+                return None
+        return None
 
 
 class ChannelMemberResponse(BaseModel):
