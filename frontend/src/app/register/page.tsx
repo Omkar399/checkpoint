@@ -32,23 +32,43 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
-      <form
-        onSubmit={onSubmit}
-        className="w-full max-w-sm space-y-6 rounded-lg border border-border bg-card p-8 shadow-sm"
-      >
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Create account</h1>
-          <p className="text-sm text-muted-foreground">Start tracking your check-ins.</p>
+    <main className="flex flex-1 items-center justify-center bg-background px-6 py-16">
+      <div className="w-full max-w-sm space-y-8">
+        <div className="flex items-center gap-2">
+          <div className="size-8 rounded-full bg-primary" />
+          <span className="text-xl font-bold tracking-tight">Checkpoint</span>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">Sign up to start tracking.</h1>
+          <p className="text-sm text-muted-foreground">
+            Join your crew. Show up daily. Watch the streak build.
+          </p>
+        </div>
+
+        <form onSubmit={onSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Label
+              htmlFor="email"
+              className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+            >
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label
+              htmlFor="username"
+              className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+            >
+              Username
+            </Label>
             <Input
               id="username"
               required
@@ -58,7 +78,12 @@ export default function RegisterPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label
+              htmlFor="password"
+              className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+            >
+              Password
+            </Label>
             <Input
               id="password"
               type="password"
@@ -68,21 +93,23 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+          <Button type="submit" disabled={submitting} size="lg" className="btn-label w-full">
+            {submitting ? "Creating…" : "Create account"}
+          </Button>
+        </form>
+
+        <div className="border-t border-border pt-6">
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link href="/login" className="text-foreground underline underline-offset-4">
+              Log in
+            </Link>
+          </p>
         </div>
-
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-        <Button type="submit" disabled={submitting} className="w-full">
-          {submitting ? "Creating…" : "Create account"}
-        </Button>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Already have one?{" "}
-          <Link href="/login" className="text-foreground underline underline-offset-4">
-            Sign in
-          </Link>
-        </p>
-      </form>
+      </div>
     </main>
   );
 }

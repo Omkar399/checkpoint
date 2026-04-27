@@ -41,10 +41,10 @@ export function ReactionBar({ reactions, onToggle }: ReactionBarProps) {
           type="button"
           onClick={() => onToggle(r.emoji, r.reacted_by_me)}
           className={cn(
-            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
+            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold transition-colors",
             r.reacted_by_me
-              ? "border-primary/40 bg-primary/10 text-foreground"
-              : "border-border bg-background text-muted-foreground hover:bg-muted",
+              ? "border-primary/40 bg-primary/15 text-primary"
+              : "border-transparent bg-[color:var(--color-ink-300)] text-foreground hover:border-[color:var(--color-ink-600)]",
           )}
           title={r.users.join(", ")}
         >
@@ -55,23 +55,22 @@ export function ReactionBar({ reactions, onToggle }: ReactionBarProps) {
       <button
         type="button"
         onClick={() => setPickerOpen((v) => !v)}
-        className="inline-flex h-6 items-center gap-1 rounded-full border border-dashed border-border bg-background px-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="inline-flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-[color:var(--color-ink-300)] hover:text-foreground"
         aria-label="Add reaction"
       >
-        <SmileIcon className="size-3" />
-        <span className="leading-none">+</span>
+        <SmileIcon className="size-3.5" />
       </button>
       {pickerOpen ? (
         <div
           role="dialog"
-          className="absolute left-0 top-full z-20 mt-1 flex gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-md"
+          className="absolute left-0 top-full z-20 mt-1 grid grid-cols-4 gap-0.5 rounded-lg bg-popover p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
         >
           {COMMON_EMOJIS.map((emoji) => (
             <button
               key={emoji}
               type="button"
               onClick={() => handlePick(emoji)}
-              className="rounded-md px-1.5 py-1 text-base leading-none transition-colors hover:bg-muted"
+              className="rounded-md px-2 py-1 text-base leading-none transition-colors hover:bg-[color:var(--color-ink-300)]"
             >
               {emoji}
             </button>

@@ -3,18 +3,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, LogOut, Hash, Plus } from "lucide-react";
+import { Home, LogOut, Hash } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { getChannels } from "@/lib/api/channels";
 import { getServers } from "@/lib/api/servers";
 import type { Channel, Server } from "@/lib/api/types";
 import { useAuth } from "@/providers/auth-provider";
 
-function initialsFor(name: string) {
+function firstInitial(name: string) {
+  const cleaned = name.trim();
+  if (!cleaned) return "?";
+  return cleaned[0].toUpperCase();
+}
+
+function userInitialsFor(name: string) {
   const cleaned = name.trim();
   if (!cleaned) return "?";
   const parts = cleaned.split(/\s+/);
@@ -122,111 +127,100 @@ export function AppSidebar() {
     [servers, selectedServerId],
   );
 
-  const handleSelectServer = useCallback(
-    (serverId: number) => {
-      setSelectedServerId(serverId);
-    },
-    [],
-  );
+  const handleSelectServer = useCallback((serverId: number) => {
+    setSelectedServerId(serverId);
+  }, []);
 
-  const userInitials = user ? initialsFor(user.username) : "?";
+  const userInitials = user ? userInitialsFor(user.username) : "?";
 
   return (
-    <aside className="flex h-dvh shrink-0 border-r border-border bg-muted/40">
-      {/* Server rail */}
-      <div className="flex w-16 flex-col items-center gap-2 border-r border-border bg-card/60 py-3">
+    <aside className="flex h-dvh shrink-0 bg-sidebar">
+      {/* Server rail (64px) */}
+      <div className="flex w-16 flex-col items-center gap-2 overflow-hidden border-r border-[color:var(--color-ink-200)] py-3">
         <Link
           href="/dashboard"
           aria-label="Dashboard"
           className={cn(
-            "flex size-10 items-center justify-center rounded-xl border border-transparent bg-background text-foreground transition-colors",
-            "hover:bg-accent hover:text-accent-foreground",
-            route.onDashboard &&
-              "border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
+            "flex size-10 items-center justify-center rounded-full transition-colors outline-none",
+            "focus-visible:ring-2 focus-visible:ring-primary",
+            route.onDashboard
+              ? "bg-[color:var(--color-ink-200)] text-foreground ring-2 ring-primary"
+              : "text-muted-foreground hover:bg-[color:var(--color-ink-100)] hover:text-foreground",
           )}
         >
-          <LayoutDashboard className="size-4" />
+          <Home className="size-4" />
         </Link>
-        <div className="my-1 h-px w-8 bg-border" aria-hidden="true" />
-        <ScrollArea className="w-full flex-1">
-          <div className="flex flex-col items-center gap-2 px-2">
-            {serversLoading ? (
-              <div className="flex flex-col items-center gap-2">
-                {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="size-10 animate-pulse rounded-xl bg-muted"
-                  />
-                ))}
-              </div>
-            ) : servers.length === 0 ? (
-              <span className="px-1 text-center text-[10px] text-muted-foreground">
-                No servers
-              </span>
-            ) : (
-              servers.map((server) => {
-                const isSelected = server.id === selectedServerId;
-                const isActive = server.id === activeServerId;
-                return (
-                  <button
-                    key={server.id}
-                    type="button"
-                    onClick={() => handleSelectServer(server.id)}
-                    aria-label={server.name}
-                    aria-current={isActive ? "page" : undefined}
-                    title={server.name}
-                    className={cn(
-                      "flex size-10 items-center justify-center rounded-xl border text-sm font-semibold transition-all outline-none",
-                      "focus-visible:ring-3 focus-visible:ring-ring/50",
-                      isActive
-                        ? "border-primary/40 bg-primary text-primary-foreground"
-                        : isSelected
-                          ? "border-border bg-accent text-accent-foreground"
-                          : "border-transparent bg-background text-muted-foreground hover:border-border hover:bg-accent hover:text-accent-foreground",
-                    )}
-                  >
-                    {server.icon_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={server.icon_url}
-                        alt={server.name}
-                        className="size-full rounded-[10px] object-cover"
-                      />
-                    ) : (
-                      <span>{initialsFor(server.name)}</span>
-                    )}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </ScrollArea>
+        <div className="my-1 h-px w-6 bg-[color:var(--color-ink-200)]" aria-hidden="true" />
+        <div className="flex w-full flex-1 flex-col items-center gap-2 overflow-y-auto overflow-x-hidden px-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+          {serversLoading ? (
+            <div className="flex flex-col items-center gap-2">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="size-10 animate-pulse rounded-full bg-[color:var(--color-ink-200)]"
+                />
+              ))}
+            </div>
+          ) : servers.length === 0 ? (
+            <span className="px-1 text-center text-[10px] text-muted-foreground">
+              No servers
+            </span>
+          ) : (
+            servers.map((server) => {
+              const isSelected = server.id === selectedServerId;
+              const isActive = server.id === activeServerId;
+              return (
+                <button
+                  key={server.id}
+                  type="button"
+                  onClick={() => handleSelectServer(server.id)}
+                  aria-label={server.name}
+                  aria-current={isActive ? "page" : undefined}
+                  title={server.name}
+                  className={cn(
+                    "flex size-10 items-center justify-center rounded-full text-sm font-bold transition-all outline-none overflow-hidden",
+                    "focus-visible:ring-2 focus-visible:ring-primary",
+                    isActive
+                      ? "bg-[color:var(--color-ink-200)] text-foreground ring-2 ring-primary"
+                      : isSelected
+                        ? "bg-[color:var(--color-ink-200)] text-foreground"
+                        : "bg-transparent text-muted-foreground hover:bg-[color:var(--color-ink-100)] hover:text-foreground",
+                  )}
+                >
+                  {server.icon_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={server.icon_url}
+                      alt={server.name}
+                      className="size-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span>{firstInitial(server.name)}</span>
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
       </div>
 
-      {/* Channel column */}
+      {/* Channel column (220px) */}
       <div className="flex w-[220px] flex-col">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold tracking-tight">
-              {selectedServer ? selectedServer.name : "Checkpoint"}
+        <div className="px-4 py-3">
+          <p className="truncate text-base font-bold tracking-tight text-foreground">
+            {selectedServer ? selectedServer.name : "Library"}
+          </p>
+          {selectedServer?.description ? (
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              {selectedServer.description}
             </p>
-            {selectedServer?.description ? (
-              <p className="truncate text-xs text-muted-foreground">
-                {selectedServer.description}
-              </p>
-            ) : !selectedServer ? (
-              <p className="truncate text-xs text-muted-foreground">
-                Select a server
-              </p>
-            ) : null}
-          </div>
+          ) : null}
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="flex flex-col gap-0.5 p-2">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+          <div className="flex flex-col gap-0.5 px-2 pb-2">
             {selectedServerId === null ? (
-              <div className="px-3 py-8 text-center">
-                <Hash className="mx-auto mb-2 size-5 text-muted-foreground" />
+              <div className="px-3 py-6 text-center">
                 <p className="text-xs text-muted-foreground">
                   Pick a server from the rail to see its channels.
                 </p>
@@ -236,7 +230,7 @@ export function AppSidebar() {
                 {[0, 1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="h-7 animate-pulse rounded-md bg-muted"
+                    className="h-7 animate-pulse rounded bg-[color:var(--color-ink-200)]"
                   />
                 ))}
               </div>
@@ -253,8 +247,7 @@ export function AppSidebar() {
                 </Button>
               </div>
             ) : channels.length === 0 ? (
-              <div className="flex flex-col items-center px-3 py-6 text-center">
-                <Plus className="mb-2 size-4 text-muted-foreground" />
+              <div className="px-3 py-6 text-center">
                 <p className="text-xs text-muted-foreground">
                   No channels yet.
                 </p>
@@ -268,29 +261,22 @@ export function AppSidebar() {
                     href={`/server/${channel.server_id}/channel/${channel.id}`}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
-                      "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                      isActive &&
-                        "bg-primary/10 text-foreground hover:bg-primary/10",
+                      "group flex items-center gap-1.5 rounded px-3 py-1.5 text-sm transition-colors",
+                      isActive
+                        ? "bg-[color:var(--color-ink-200)] font-bold text-foreground"
+                        : "font-normal text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    <Hash
-                      className={cn(
-                        "size-3.5 shrink-0",
-                        isActive
-                          ? "text-primary"
-                          : "text-muted-foreground group-hover:text-foreground",
-                      )}
-                    />
+                    <Hash className="size-3.5 shrink-0 opacity-70" />
                     <span className="truncate">{channel.name}</span>
                   </Link>
                 );
               })
             )}
           </div>
-        </ScrollArea>
+        </div>
 
-        <div className="mt-auto border-t border-border bg-card/60 p-3">
+        <div className="mt-auto bg-[color:var(--color-ink-100)] px-3 py-2.5">
           <div className="flex items-center gap-2.5">
             <Avatar size="sm">
               {user?.avatar_url ? (
@@ -299,7 +285,7 @@ export function AppSidebar() {
               <AvatarFallback>{userInitials}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium">
+              <p className="truncate text-xs font-bold text-foreground">
                 {user?.username ?? "Guest"}
               </p>
               {user?.email ? (

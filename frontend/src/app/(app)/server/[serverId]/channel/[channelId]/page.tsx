@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useParams } from "next/navigation";
 import { FlameIcon, CircleCheckIcon } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getChannel } from "@/lib/api/channels";
@@ -15,6 +16,7 @@ import { CheckInCard } from "@/components/checkin-card";
 import { CheckInDialog } from "@/components/checkin-dialog";
 import { UserProfileDialog } from "@/components/user-profile-dialog";
 import { LeaderboardPanel } from "@/components/leaderboard-panel";
+import { cn } from "@/lib/utils";
 import type {
   Channel,
   CheckIn,
@@ -38,6 +40,18 @@ function getTimestamp(item: Message | CheckInFeedItem): number {
     return new Date((item as Message).created_at).getTime();
   }
   return new Date((item as CheckInFeedItem).checked_in_at).getTime();
+}
+
+function initials(name: string): string {
+  if (!name) return "?";
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() ?? "")
+      .join("") || name.slice(0, 2).toUpperCase()
+  );
 }
 
 export default function ChannelPage() {
@@ -236,68 +250,85 @@ export default function ChannelPage() {
 
   if (!channelId) return null;
 
+  const statusLabel = connected ? (connectionType === "websocket" ? "live" : "polling") : "offline";
+  const statusDotClass = connected
+    ? connectionType === "websocket"
+      ? "bg-primary"
+      : "bg-[color:var(--color-ink-700)]"
+    : "bg-destructive";
+
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-8">
-      <section>
-        <div className="flex items-baseline justify-between gap-3">
-          <div className="flex items-baseline gap-3">
-            <h1 className="text-xl font-semibold tracking-tight">
-              {channel ? `# ${channel.name}` : "Loading…"}
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8 pb-40">
+      {/* Header */}
+      <section className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              {channel ? `#${channel.name}` : "Loading…"}
             </h1>
             <span
-              className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2 py-0.5 text-xs font-medium text-foreground"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-ink-200)] px-3 py-1 text-sm font-bold tracking-tight text-foreground"
               title={`Current streak: ${streak} day${streak === 1 ? "" : "s"}`}
             >
-              <FlameIcon className="size-3 text-orange-500" />
+              <FlameIcon className="size-3.5 text-primary" />
               <span className="tabular-nums">{streak}</span>
-              <span className="text-muted-foreground">day streak</span>
+              <span className="text-muted-foreground font-normal">
+                day{streak === 1 ? "" : "s"}
+              </span>
             </span>
           </div>
-          <span className="text-xs text-muted-foreground">
-            {connected ? (connectionType === "websocket" ? "live" : "polling") : "offline"}
+          <span
+            className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-ink-200)] px-3 py-1 text-xs font-semibold text-muted-foreground"
+            title={`Connection: ${statusLabel}`}
+          >
+            <span className={cn("size-1.5 rounded-full", statusDotClass)} aria-hidden="true" />
+            <span className="uppercase tracking-wider">{statusLabel}</span>
           </span>
         </div>
         {channel?.description ? (
-          <p className="mt-1 text-sm text-muted-foreground">{channel.description}</p>
+          <p className="text-sm text-muted-foreground">{channel.description}</p>
         ) : null}
-        {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
       </section>
 
-      <section className="rounded-lg border border-border bg-card p-4">
-        <h2 className="text-sm font-medium text-muted-foreground">
+      {/* Daily dashboard */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
           Today — {checkedInCount} / {dashboard.length} checked in
         </h2>
-        <ul className="mt-2 flex flex-wrap gap-2 text-sm">
+        <ul className="flex flex-wrap gap-2">
           {dashboard.map((entry) => (
             <li key={entry.user_id}>
               <button
                 type="button"
                 onClick={() => openProfile(entry.user_id)}
-                className={`rounded-full border px-2 py-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                className={cn(
+                  "rounded-full px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   entry.checked_in
-                    ? "border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/15"
-                    : "border-border text-muted-foreground hover:text-foreground"
-                }`}
+                    ? "bg-primary/15 text-foreground ring-1 ring-primary/40 hover:bg-primary/20"
+                    : "bg-[color:var(--color-ink-200)] text-muted-foreground hover:bg-[color:var(--color-ink-300)] hover:text-foreground",
+                )}
               >
                 {entry.username}
               </button>
             </li>
           ))}
           {dashboard.length === 0 ? (
-            <li className="text-muted-foreground">No members yet.</li>
+            <li className="text-sm text-muted-foreground">No members yet.</li>
           ) : null}
         </ul>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <section className="flex min-h-[360px] flex-col rounded-lg border border-border bg-card">
-          <ul className="flex-1 space-y-2 overflow-y-auto p-4 text-sm">
+      {/* Feed + Leaderboard */}
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <section className="flex min-h-[360px] flex-col bg-background">
+          <ul className="flex-1 space-y-1 overflow-y-auto text-sm">
             {feed.length === 0 ? (
               <li className="text-muted-foreground">No messages yet.</li>
             ) : (
               feed.map((item) =>
                 isCheckin(item) ? (
-                  <li key={`checkin-${item.id}`}>
+                  <li key={`checkin-${item.id}`} className="py-1">
                     <CheckInCard
                       checkin={item}
                       targetUnit={channel?.target_unit ?? null}
@@ -306,39 +337,65 @@ export default function ChannelPage() {
                     />
                   </li>
                 ) : (
-                  <li key={`msg-${item.id}`} className="space-y-0.5">
-                    <div className="flex items-baseline gap-2">
-                      <button
-                        type="button"
-                        onClick={() => openProfile(item.user.id)}
-                        className="font-medium underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
-                      >
-                        {item.user.username}
-                      </button>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(item.created_at).toLocaleTimeString()}
-                      </span>
+                  <li key={`msg-${item.id}`} className="group/row flex items-start gap-3 rounded-md px-2 py-1 hover:bg-[color:var(--color-ink-100)]">
+                    <button
+                      type="button"
+                      onClick={() => openProfile(item.user.id)}
+                      className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label={`Open ${item.user.username}'s profile`}
+                    >
+                      <Avatar className="size-8">
+                        {item.user.avatar_url ? (
+                          <AvatarImage src={item.user.avatar_url} alt={item.user.username} />
+                        ) : null}
+                        <AvatarFallback>{initials(item.user.username)}</AvatarFallback>
+                      </Avatar>
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openProfile(item.user.id)}
+                          className="font-bold text-foreground underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
+                        >
+                          {item.user.username}
+                        </button>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(item.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <div className="text-sm text-foreground">{item.content}</div>
                     </div>
-                    <div>{item.content}</div>
                   </li>
                 ),
               )
             )}
           </ul>
-          <div className="flex items-center gap-2 border-t border-border px-3 pt-3">
-            <CheckInDialog
-              targetUnit={channel?.target_unit ?? null}
-              targetLabel={channel?.target_label ?? null}
-              onSubmit={handleCheckinSubmit}
-              trigger={
-                <Button type="button" variant="outline" size="sm">
-                  <CircleCheckIcon className="size-3.5" />
-                  Check in
-                </Button>
-              }
-            />
-          </div>
-          <form onSubmit={onSubmit} className="flex gap-2 border-border p-3">
+        </section>
+
+        <aside>
+          <LeaderboardPanel channelId={channelId} />
+        </aside>
+      </div>
+
+      {/* Composer — fixed to bottom of viewport section */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-6 py-3 lg:pr-[calc(300px+1.5rem+2rem)]">
+          <CheckInDialog
+            targetUnit={channel?.target_unit ?? null}
+            targetLabel={channel?.target_label ?? null}
+            onSubmit={handleCheckinSubmit}
+            trigger={
+              <Button type="button" variant="outline" size="sm">
+                <CircleCheckIcon className="size-3.5" />
+                Check in
+              </Button>
+            }
+          />
+          <form onSubmit={onSubmit} className="flex flex-1 items-center gap-2">
             <Input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -349,11 +406,7 @@ export default function ChannelPage() {
               Send
             </Button>
           </form>
-        </section>
-
-        <aside>
-          <LeaderboardPanel channelId={channelId} />
-        </aside>
+        </div>
       </div>
 
       <UserProfileDialog

@@ -52,9 +52,9 @@ function initials(name: string): string {
 }
 
 function rankColor(rank: number): string {
-  if (rank === 1) return "text-amber-500";
-  if (rank === 2) return "text-slate-400";
-  if (rank === 3) return "text-amber-700";
+  if (rank === 1) return "text-amber-400";
+  if (rank === 2) return "text-slate-300";
+  if (rank === 3) return "text-amber-600";
   return "text-muted-foreground";
 }
 
@@ -98,7 +98,7 @@ export function LeaderboardPanel({
     <Card className={cn("w-full", className)} size="sm">
       <CardHeader>
         <CardTitle className="inline-flex items-center gap-2">
-          <TrophyIcon className="size-4 text-amber-500" />
+          <TrophyIcon className="size-4 text-amber-400" />
           Leaderboard
         </CardTitle>
         <CardDescription>
@@ -122,23 +122,23 @@ export function LeaderboardPanel({
             {rows.map((row) => (
               <li
                 key={row.user_id}
-                className="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-muted/60"
+                className="flex items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-[color:var(--color-ink-100)]"
               >
                 <span
                   className={cn(
-                    "w-5 text-center text-sm font-semibold tabular-nums",
+                    "w-6 text-center text-sm font-bold tabular-nums",
                     rankColor(row.rank),
                   )}
                 >
                   {row.rank}
                 </span>
-                <Avatar size="sm">
+                <Avatar className="size-7">
                   {row.avatar_url ? (
                     <AvatarImage src={row.avatar_url} alt={row.username} />
                   ) : null}
                   <AvatarFallback>{initials(row.username)}</AvatarFallback>
                 </Avatar>
-                <span className="flex-1 truncate text-sm font-medium">
+                <span className="flex-1 truncate text-sm font-bold text-foreground">
                   {row.username}
                 </span>
                 <span className="text-sm tabular-nums text-muted-foreground">

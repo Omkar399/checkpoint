@@ -77,7 +77,7 @@ export function CreateChannelDialog({ serverId, onCreated, trigger }: CreateChan
     >
       <DialogTrigger render={trigger ? (trigger as React.ReactElement) : <Button>New channel</Button>} />
       <DialogContent>
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-5">
           <DialogHeader>
             <DialogTitle>Create a channel</DialogTitle>
             <DialogDescription>
@@ -85,9 +85,14 @@ export function CreateChannelDialog({ serverId, onCreated, trigger }: CreateChan
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="channel-name">Name</Label>
+              <Label
+                htmlFor="channel-name"
+                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+              >
+                Name
+              </Label>
               <Input
                 id="channel-name"
                 required
@@ -98,7 +103,12 @@ export function CreateChannelDialog({ serverId, onCreated, trigger }: CreateChan
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="channel-description">Description</Label>
+              <Label
+                htmlFor="channel-description"
+                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+              >
+                Description
+              </Label>
               <Textarea
                 id="channel-description"
                 value={description}
@@ -107,9 +117,14 @@ export function CreateChannelDialog({ serverId, onCreated, trigger }: CreateChan
                 rows={3}
               />
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="channel-target-label">Target label</Label>
+                <Label
+                  htmlFor="channel-target-label"
+                  className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+                >
+                  Target label
+                </Label>
                 <Input
                   id="channel-target-label"
                   value={targetLabel}
@@ -118,7 +133,12 @@ export function CreateChannelDialog({ serverId, onCreated, trigger }: CreateChan
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="channel-target-unit">Target unit</Label>
+                <Label
+                  htmlFor="channel-target-unit"
+                  className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+                >
+                  Target unit
+                </Label>
                 <Input
                   id="channel-target-unit"
                   value={targetUnit}
@@ -134,7 +154,7 @@ export function CreateChannelDialog({ serverId, onCreated, trigger }: CreateChan
           <DialogFooter>
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={() => {
                 setOpen(false);
                 reset();
@@ -143,7 +163,11 @@ export function CreateChannelDialog({ serverId, onCreated, trigger }: CreateChan
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting || name.trim().length === 0}>
+            <Button
+              type="submit"
+              disabled={submitting || name.trim().length === 0}
+              className="btn-label"
+            >
               {submitting ? "Creating…" : "Create"}
             </Button>
           </DialogFooter>

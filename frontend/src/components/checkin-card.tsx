@@ -23,51 +23,50 @@ export function CheckInCard({ checkin, targetUnit, onToggleReaction, onUserClick
   const handleUserClick = onUserClick ? () => onUserClick(user.id) : undefined;
 
   return (
-    <div className="relative rounded-lg border border-border bg-accent/30 p-3 pl-4">
-      <span className="absolute left-0 top-0 h-full w-1 rounded-l-lg bg-primary/70" />
+    <div className="rounded-lg border-l-2 border-l-primary bg-[color:var(--color-ink-200)] px-4 py-3">
       <div className="flex items-start gap-3">
         {handleUserClick ? (
           <button
             type="button"
             onClick={handleUserClick}
-            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label={`Open ${user.username}'s profile`}
           >
-            <Avatar size="sm">
+            <Avatar className="size-8">
               {user.avatar_url ? <AvatarImage src={user.avatar_url} alt={user.username} /> : null}
               <AvatarFallback>{initial}</AvatarFallback>
             </Avatar>
           </button>
         ) : (
-          <Avatar size="sm">
+          <Avatar className="size-8">
             {user.avatar_url ? <AvatarImage src={user.avatar_url} alt={user.username} /> : null}
             <AvatarFallback>{initial}</AvatarFallback>
           </Avatar>
         )}
         <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             {handleUserClick ? (
               <button
                 type="button"
                 onClick={handleUserClick}
-                className="font-medium text-foreground underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
+                className="font-bold text-foreground underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
               >
                 {user.username}
               </button>
             ) : (
-              <span className="font-medium text-foreground">{user.username}</span>
+              <span className="font-bold text-foreground">{user.username}</span>
             )}
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
               <CircleCheckIcon className="size-3" />
               Check-in
             </span>
             <span className="text-xs text-muted-foreground">{time}</span>
           </div>
           {value != null ? (
-            <div className="text-sm text-foreground">
-              <span className="text-lg font-semibold tabular-nums">{value}</span>
+            <div className="flex items-baseline gap-1 text-foreground">
+              <span className="text-2xl font-bold tabular-nums leading-none">{value}</span>
               {targetUnit ? (
-                <span className="ml-1 text-xs text-muted-foreground">{targetUnit}</span>
+                <span className="ml-1 text-sm text-muted-foreground">{targetUnit}</span>
               ) : null}
             </div>
           ) : null}

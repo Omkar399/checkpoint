@@ -79,10 +79,13 @@ export function CheckInDialog({ trigger, targetUnit, targetLabel, onSubmit }: Ch
             Share your progress for today. {targetLabel ? `Goal: ${targetLabel}.` : ""}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <div className="grid gap-1.5">
-            <Label htmlFor="checkin-value">
-              Value{targetUnit ? <span className="text-muted-foreground">({targetUnit})</span> : null}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="grid gap-2">
+            <Label
+              htmlFor="checkin-value"
+              className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+            >
+              Value{targetUnit ? <span className="ml-1 normal-case tracking-normal text-muted-foreground">({targetUnit})</span> : null}
             </Label>
             <Input
               id="checkin-value"
@@ -95,8 +98,13 @@ export function CheckInDialog({ trigger, targetUnit, targetLabel, onSubmit }: Ch
               disabled={submitting}
             />
           </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="checkin-note">Note</Label>
+          <div className="grid gap-2">
+            <Label
+              htmlFor="checkin-note"
+              className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+            >
+              Note
+            </Label>
             <textarea
               id="checkin-note"
               value={note}
@@ -105,18 +113,18 @@ export function CheckInDialog({ trigger, targetUnit, targetLabel, onSubmit }: Ch
               rows={3}
               disabled={submitting}
               className={cn(
-                "min-h-16 w-full rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm outline-none transition-colors",
-                "placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-                "disabled:pointer-events-none disabled:opacity-50 dark:bg-input/30",
+                "min-h-16 w-full rounded-lg bg-[color:var(--color-ink-200)] px-3 py-2 text-sm text-foreground outline-none transition-colors",
+                "shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] placeholder:text-muted-foreground hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)] focus-visible:shadow-[inset_0_0_0_2px_#1ed760]",
+                "disabled:pointer-events-none disabled:opacity-50",
               )}
             />
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" disabled={submitting} />}>
+            <DialogClose render={<Button type="button" variant="ghost" disabled={submitting} />}>
               Cancel
             </DialogClose>
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" disabled={submitting} className="btn-label">
               {submitting ? "Recording…" : "Check in"}
             </Button>
           </DialogFooter>

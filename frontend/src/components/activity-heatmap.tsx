@@ -194,7 +194,7 @@ export function ActivityHeatmap({ data, year, className }: ActivityHeatmapProps)
                   <div
                     key={`${w}-${d}`}
                     className={cn(
-                      "size-3 rounded-[3px] ring-1 ring-foreground/5 transition-colors",
+                      "size-3 rounded-[2px] ring-1 ring-foreground/5 transition-colors",
                       bucketClass(cell.count),
                     )}
                     title={`${formatPrettyDate(cell.date)}: ${cell.count} check-in${cell.count === 1 ? "" : "s"}`}
@@ -211,10 +211,10 @@ export function ActivityHeatmap({ data, year, className }: ActivityHeatmapProps)
       {/* Legend */}
       <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
         <span>Less</span>
-        <span className="size-3 rounded-[3px] bg-primary/10 ring-1 ring-foreground/5" />
-        <span className="size-3 rounded-[3px] bg-primary/30 ring-1 ring-foreground/5" />
-        <span className="size-3 rounded-[3px] bg-primary/60 ring-1 ring-foreground/5" />
-        <span className="size-3 rounded-[3px] bg-primary ring-1 ring-foreground/5" />
+        <span className="size-3 rounded-[2px] bg-primary/10 ring-1 ring-foreground/5" />
+        <span className="size-3 rounded-[2px] bg-primary/30 ring-1 ring-foreground/5" />
+        <span className="size-3 rounded-[2px] bg-primary/60 ring-1 ring-foreground/5" />
+        <span className="size-3 rounded-[2px] bg-primary ring-1 ring-foreground/5" />
         <span>More</span>
       </div>
     </div>

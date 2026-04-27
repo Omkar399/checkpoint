@@ -2,37 +2,26 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateServerDialog } from "@/components/create-server-dialog";
 import { getServers } from "@/lib/api/servers";
-import { getChannels } from "@/lib/api/channels";
-import type { Channel, Server } from "@/lib/api/types";
+import type { Server } from "@/lib/api/types";
 
-interface ServerWithChannels {
-  server: Server;
-  channels: Channel[];
+function firstInitial(name: string) {
+  const cleaned = name.trim();
+  if (!cleaned) return "?";
+  return cleaned[0].toUpperCase();
 }
 
 export default function DashboardPage() {
-  const [items, setItems] = useState<ServerWithChannels[]>([]);
+  const [servers, setServers] = useState<Server[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: servers } = await getServers();
-      const expanded = await Promise.all(
-        servers.map(async (server) => {
-          try {
-            const res = await getChannels(server.id);
-            return { server, channels: res.data };
-          } catch {
-            return { server, channels: [] };
-          }
-        }),
-      );
-      setItems(expanded);
+      const { data } = await getServers();
+      setServers(data);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load servers.");
@@ -46,66 +35,67 @@ export default function DashboardPage() {
   }, [load]);
 
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-6 px-6 py-10">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Your servers</h1>
-          <p className="text-sm text-muted-foreground">Pick a channel to see today's check-ins.</p>
+    <div className="mx-auto w-full max-w-6xl space-y-8 px-8 py-10">
+      <div className="flex items-end justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Your servers
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Pick a channel to see today's check-ins.
+          </p>
         </div>
         <CreateServerDialog onCreated={() => load()} />
       </div>
 
-      {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      {!loading && items.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>No servers yet</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            Create a server or accept an invite to get started.
-          </CardContent>
-        </Card>
+
+      {!loading && servers.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+          <p className="text-sm text-muted-foreground">
+            No servers yet. Create your first one or accept an invite to get started.
+          </p>
+          <CreateServerDialog onCreated={() => load()} />
+        </div>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {items.map(({ server, channels }) => (
-          <Card key={server.id}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between gap-2">
-                <span>{server.name}</span>
-                <Link
-                  href={`/server/${server.id}`}
-                  className="text-xs font-normal text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                >
-                  Manage →
-                </Link>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              {server.description ? (
-                <p className="text-muted-foreground">{server.description}</p>
-              ) : null}
-              <ul className="space-y-1">
-                {channels.length === 0 ? (
-                  <li className="text-muted-foreground">No channels.</li>
+      {servers.length > 0 ? (
+        <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
+          {servers.map((server) => (
+            <Link
+              key={server.id}
+              href={`/server/${server.id}`}
+              className="group block rounded-lg bg-card p-4 transition-colors hover:bg-[color:var(--color-ink-300)]"
+            >
+              <div className="mb-4 flex aspect-square w-full items-center justify-center overflow-hidden rounded bg-primary/20">
+                {server.icon_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={server.icon_url}
+                    alt={server.name}
+                    className="size-full object-cover"
+                  />
                 ) : (
-                  channels.map((ch) => (
-                    <li key={ch.id}>
-                      <Link
-                        href={`/server/${server.id}/channel/${ch.id}`}
-                        className="text-foreground underline underline-offset-4"
-                      >
-                        # {ch.name}
-                      </Link>
-                    </li>
-                  ))
+                  <span className="text-4xl font-bold text-primary">
+                    {firstInitial(server.name)}
+                  </span>
                 )}
-              </ul>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </main>
+              </div>
+              <p className="truncate text-base font-bold text-foreground">
+                {server.name}
+              </p>
+              {server.description ? (
+                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                  {server.description}
+                </p>
+              ) : null}
+            </Link>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }

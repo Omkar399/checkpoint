@@ -116,10 +116,15 @@ export function InviteDialog({ serverId, trigger }: InviteDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="invite-max-uses">Max uses</Label>
+              <Label
+                htmlFor="invite-max-uses"
+                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+              >
+                Max uses
+              </Label>
               <Input
                 id="invite-max-uses"
                 type="number"
@@ -130,7 +135,12 @@ export function InviteDialog({ serverId, trigger }: InviteDialogProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="invite-expires">Expires in (hours)</Label>
+              <Label
+                htmlFor="invite-expires"
+                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+              >
+                Expires in (hours)
+              </Label>
               <Input
                 id="invite-expires"
                 type="number"
@@ -142,14 +152,19 @@ export function InviteDialog({ serverId, trigger }: InviteDialogProps) {
             </div>
           </div>
 
-          <Button type="button" onClick={onCreate} disabled={creating} className="w-full">
+          <Button
+            type="button"
+            onClick={onCreate}
+            disabled={creating}
+            className="btn-label w-full"
+          >
             {creating ? "Generating…" : "Generate invite"}
           </Button>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Existing invites
             </p>
             {loading ? (
@@ -157,7 +172,7 @@ export function InviteDialog({ serverId, trigger }: InviteDialogProps) {
             ) : invites.length === 0 ? (
               <p className="text-sm text-muted-foreground">No invites yet.</p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="flex flex-col gap-1">
                 {invites.map((invite) => {
                   const url = buildInviteUrl(invite.code);
                   const usesLabel =
@@ -170,16 +185,16 @@ export function InviteDialog({ serverId, trigger }: InviteDialogProps) {
                   return (
                     <li
                       key={invite.id}
-                      className="space-y-1 rounded-lg border border-border bg-card p-3"
+                      className="flex flex-col gap-1 rounded-md px-2 py-2 transition-colors hover:bg-[color:var(--color-ink-100)]"
                     >
                       <div className="flex items-center gap-2">
-                        <code className="flex-1 truncate rounded bg-muted px-2 py-1 text-xs">
+                        <code className="flex-1 truncate font-mono text-xs text-foreground">
                           {url}
                         </code>
                         <Button
                           type="button"
-                          size="sm"
-                          variant="outline"
+                          size="xs"
+                          variant="secondary"
                           onClick={() => copy(invite.code)}
                         >
                           {copiedCode === invite.code ? "Copied" : "Copy"}

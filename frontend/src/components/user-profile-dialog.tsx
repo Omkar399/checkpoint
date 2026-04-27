@@ -116,34 +116,34 @@ export function UserProfileDialog({
         ) : user ? (
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-4">
-              <Avatar size="lg" className="size-14">
+              <Avatar className="size-16">
                 {user.avatar_url ? (
                   <AvatarImage src={user.avatar_url} alt={user.username} />
                 ) : null}
-                <AvatarFallback>{initials(user.username)}</AvatarFallback>
+                <AvatarFallback className="text-lg">{initials(user.username)}</AvatarFallback>
               </Avatar>
-              <div className="flex min-w-0 flex-col">
-                <h3 className="font-heading text-lg font-medium leading-tight">
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <h3 className="text-xl font-bold tracking-tight text-foreground">
                   {user.username}
                 </h3>
                 <p className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                   <MailIcon className="size-3.5" />
                   <span className="truncate">{user.email}</span>
                 </p>
-                <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                <p className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                   <CalendarIcon className="size-3.5" />
                   Joined {formatJoinDate(user.created_at)}
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               <div className="flex items-baseline justify-between">
-                <h4 className="text-sm font-medium">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Activity in {currentYear}
                   {channelId ? " (this channel)" : ""}
                 </h4>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground tabular-nums">
                   {heatmap.reduce((s, e) => s + e.count, 0)} check-ins
                 </span>
               </div>

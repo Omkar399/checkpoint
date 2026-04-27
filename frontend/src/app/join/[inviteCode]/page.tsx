@@ -35,18 +35,44 @@ export default function JoinServerPage() {
   if (loading || !token) return null;
 
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md space-y-5 rounded-lg border border-border bg-card p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold tracking-tight">Join a server</h1>
-        <p className="text-sm text-muted-foreground">
-          You were invited via code <code className="rounded bg-muted px-1 py-0.5">{inviteCode}</code>.
-        </p>
+    <main className="flex flex-1 items-center justify-center bg-background px-6 py-16">
+      <div className="w-full max-w-sm space-y-8">
+        <div className="flex items-center gap-2">
+          <div className="size-8 rounded-full bg-primary" />
+          <span className="text-xl font-bold tracking-tight">Checkpoint</span>
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            You&apos;re invited
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Join the server</h1>
+          <p className="text-sm text-muted-foreground">
+            You were invited via code{" "}
+            <code className="rounded-full bg-[color:var(--color-ink-200)] px-2 py-0.5 font-mono text-xs text-foreground">
+              {inviteCode}
+            </code>
+            . Accept to start checking in with the crew.
+          </p>
+        </div>
+
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <div className="flex gap-3">
-          <Button onClick={accept} disabled={status === "pending"}>
+
+        <div className="space-y-3">
+          <Button
+            onClick={accept}
+            disabled={status === "pending"}
+            size="lg"
+            className="btn-label w-full"
+          >
             {status === "pending" ? "Joining…" : "Accept invite"}
           </Button>
-          <Button variant="outline" onClick={() => router.replace("/dashboard")}>
+          <Button
+            variant="ghost"
+            size="lg"
+            onClick={() => router.replace("/dashboard")}
+            className="w-full"
+          >
             Cancel
           </Button>
         </div>

@@ -3,8 +3,8 @@
 Next.js 16 + TypeScript + Tailwind v4 + shadcn/ui. Talks to the FastAPI backend
 at `../backend/` via REST (`/api/v1`) and WebSocket (`/api/v1/ws/{channel_id}`).
 
-The retired React/Vite app lives at `../frontend-legacy/` — keep it around for
-API-integration reference only; don't run it.
+The original React/Vite implementation has been removed. Recoverable from git
+history at commit `4fb7a9e^` if needed for reference.
 
 ## Setup
 

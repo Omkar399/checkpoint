@@ -67,7 +67,7 @@ export function CreateServerDialog({ onCreated, trigger }: CreateServerDialogPro
     >
       <DialogTrigger render={trigger ? (trigger as React.ReactElement) : <Button>New server</Button>} />
       <DialogContent>
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-5">
           <DialogHeader>
             <DialogTitle>Create a server</DialogTitle>
             <DialogDescription>
@@ -75,9 +75,14 @@ export function CreateServerDialog({ onCreated, trigger }: CreateServerDialogPro
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="server-name">Name</Label>
+              <Label
+                htmlFor="server-name"
+                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+              >
+                Name
+              </Label>
               <Input
                 id="server-name"
                 required
@@ -88,7 +93,12 @@ export function CreateServerDialog({ onCreated, trigger }: CreateServerDialogPro
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="server-description">Description</Label>
+              <Label
+                htmlFor="server-description"
+                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+              >
+                Description
+              </Label>
               <Textarea
                 id="server-description"
                 value={description}
@@ -104,7 +114,7 @@ export function CreateServerDialog({ onCreated, trigger }: CreateServerDialogPro
           <DialogFooter>
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={() => {
                 setOpen(false);
                 reset();
@@ -113,7 +123,11 @@ export function CreateServerDialog({ onCreated, trigger }: CreateServerDialogPro
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting || name.trim().length === 0}>
+            <Button
+              type="submit"
+              disabled={submitting || name.trim().length === 0}
+              className="btn-label"
+            >
               {submitting ? "Creating…" : "Create"}
             </Button>
           </DialogFooter>

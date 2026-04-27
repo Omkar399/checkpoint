@@ -17,7 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!token) return null;
 
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex min-h-dvh bg-background">
       <AppSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <main className="flex-1 overflow-y-auto bg-background">{children}</main>

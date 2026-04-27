@@ -31,19 +31,28 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
-      <form
-        onSubmit={onSubmit}
-        className="w-full max-w-sm space-y-6 rounded-lg border border-border bg-card p-8 shadow-sm"
-      >
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-          <p className="text-sm text-muted-foreground">Use your Checkpoint credentials.</p>
+    <main className="flex flex-1 items-center justify-center bg-background px-6 py-16">
+      <div className="w-full max-w-sm space-y-8">
+        <div className="flex items-center gap-2">
+          <div className="size-8 rounded-full bg-primary" />
+          <span className="text-xl font-bold tracking-tight">Checkpoint</span>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">Log in to Checkpoint</h1>
+          <p className="text-sm text-muted-foreground">
+            Keep your streak going. Check in with your crew.
+          </p>
+        </div>
+
+        <form onSubmit={onSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label
+              htmlFor="email"
+              className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+            >
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
@@ -54,7 +63,12 @@ export default function LoginPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label
+              htmlFor="password"
+              className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+            >
+              Password
+            </Label>
             <Input
               id="password"
               type="password"
@@ -64,21 +78,23 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+          <Button type="submit" disabled={submitting} size="lg" className="btn-label w-full">
+            {submitting ? "Signing in…" : "Log in"}
+          </Button>
+        </form>
+
+        <div className="border-t border-border pt-6">
+          <p className="text-center text-sm text-muted-foreground">
+            No account?{" "}
+            <Link href="/register" className="text-foreground underline underline-offset-4">
+              Sign up for Checkpoint
+            </Link>
+          </p>
         </div>
-
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-        <Button type="submit" disabled={submitting} className="w-full">
-          {submitting ? "Signing in…" : "Sign in"}
-        </Button>
-
-        <p className="text-center text-sm text-muted-foreground">
-          No account?{" "}
-          <Link href="/register" className="text-foreground underline underline-offset-4">
-            Create one
-          </Link>
-        </p>
-      </form>
+      </div>
     </main>
   );
 }
