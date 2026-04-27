@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FlameIcon, ZapIcon, CalendarCheck2Icon, Users2Icon } from "lucide-react";
 import { getServers } from "@/lib/api/servers";
-import { getUserHeatmap } from "@/lib/api/users";
+import { getUserHeatmap, getMyToday } from "@/lib/api/users";
 import { useAuth } from "@/providers/auth-provider";
 import { computeStats, computeWeekPulse, type ComputedStats } from "@/lib/stats";
+import { computeCoachQuote } from "@/lib/coach";
+import { CoachQuoteCard } from "@/components/coach-quote";
+import { TodayChecklist } from "@/components/today-checklist";
 import { WeekPulse } from "@/components/week-pulse";
 import type { WeekDayPulse } from "@/lib/stats";
+import type { TodayChannelEntry } from "@/lib/api/types";
 
 const numberFmt = new Intl.NumberFormat();
 
@@ -68,6 +72,7 @@ export function DashboardStatsHero({ fallbackName }: DashboardStatsHeroProps) {
   const [stats, setStats] = useState<ComputedStats | null>(null);
   const [pulse, setPulse] = useState<WeekDayPulse[] | null>(null);
   const [serverCount, setServerCount] = useState<number | null>(null);
+  const [today, setToday] = useState<TodayChannelEntry[] | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -75,18 +80,21 @@ export function DashboardStatsHero({ fallbackName }: DashboardStatsHeroProps) {
     Promise.all([
       getUserHeatmap(user.id, undefined, new Date().getFullYear()),
       getServers(),
+      getMyToday(),
     ])
-      .then(([heatmapRes, serversRes]) => {
+      .then(([heatmapRes, serversRes, todayRes]) => {
         if (cancelled) return;
         setStats(computeStats(heatmapRes.data));
         setPulse(computeWeekPulse(heatmapRes.data));
         setServerCount(serversRes.data.length);
+        setToday(todayRes.data);
       })
       .catch(() => {
         if (cancelled) return;
         setStats({ totalCheckins: 0, activeDays: 0, currentStreak: 0, bestStreak: 0 });
         setPulse(null);
         setServerCount(0);
+        setToday([]);
       });
     return () => {
       cancelled = true;
@@ -104,8 +112,22 @@ export function DashboardStatsHero({ fallbackName }: DashboardStatsHeroProps) {
 
   const name = user?.username ?? fallbackName ?? "friend";
 
+  const coachQuote = useMemo(() => {
+    if (today === null || stats === null) return null;
+    const doneCount = today.filter((t) => t.checked_in).length;
+    return computeCoachQuote({
+      pendingCount: today.length - doneCount,
+      doneCount,
+      totalToday: today.length,
+      currentStreak: stats.currentStreak,
+      bestStreak: stats.bestStreak,
+      hourOfDay: new Date().getHours(),
+    });
+  }, [today, stats]);
+
   return (
-    <section className="space-y-5">
+    <section className="space-y-6">
+      {/* Greeting */}
       <div className="space-y-1">
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
           {greeting}
@@ -115,32 +137,44 @@ export function DashboardStatsHero({ fallbackName }: DashboardStatsHeroProps) {
         </h1>
       </div>
 
-      <div className="anim-stagger grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
-        <StatTile
-          label="Current streak"
-          value={stats?.currentStreak ?? 0}
-          suffix={(stats?.currentStreak ?? 0) === 1 ? "day" : "days"}
-          icon={<FlameIcon className="size-4" />}
-          accent="fire"
-          large
-        />
-        <StatTile
-          label="Best run"
-          value={stats?.bestStreak ?? 0}
-          suffix={(stats?.bestStreak ?? 0) === 1 ? "day" : "days"}
-          icon={<ZapIcon className="size-4" />}
-        />
-        <StatTile
-          label="Active days"
-          value={stats?.activeDays ?? 0}
-          suffix={`/ ${new Date().getFullYear()}`}
-          icon={<CalendarCheck2Icon className="size-4" />}
-        />
-        <StatTile
-          label="Servers"
-          value={serverCount ?? 0}
-          icon={<Users2Icon className="size-4" />}
-        />
+      {/* Coach motivation */}
+      {coachQuote ? <CoachQuoteCard quote={coachQuote} /> : null}
+
+      {/* Today's check-ins — the main to-do */}
+      {today ? <TodayChecklist entries={today} /> : null}
+
+      {/* Stats bento */}
+      <div className="space-y-3">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          Your stats
+        </h2>
+        <div className="anim-stagger grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
+          <StatTile
+            label="Current streak"
+            value={stats?.currentStreak ?? 0}
+            suffix={(stats?.currentStreak ?? 0) === 1 ? "day" : "days"}
+            icon={<FlameIcon className="size-4" />}
+            accent="fire"
+            large
+          />
+          <StatTile
+            label="Longest streak"
+            value={stats?.bestStreak ?? 0}
+            suffix={(stats?.bestStreak ?? 0) === 1 ? "day" : "days"}
+            icon={<ZapIcon className="size-4" />}
+          />
+          <StatTile
+            label="Active days"
+            value={stats?.activeDays ?? 0}
+            suffix={`/ ${new Date().getFullYear()}`}
+            icon={<CalendarCheck2Icon className="size-4" />}
+          />
+          <StatTile
+            label="Servers"
+            value={serverCount ?? 0}
+            icon={<Users2Icon className="size-4" />}
+          />
+        </div>
       </div>
 
       {pulse ? (

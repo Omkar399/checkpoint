@@ -122,7 +122,7 @@ async def websocket_endpoint(
                     checkin_data = {
                         "type": "new_checkin",
                         "message": {
-                            "id": f"checkin-{checkin.id}",
+                            "id": checkin.id,
                             "checkin_id": checkin.id,
                             "channel_id": checkin.channel_id,
                             "user_id": checkin.user_id,
@@ -132,6 +132,7 @@ async def websocket_endpoint(
                                 checkin.checked_items
                             ),
                             "message_type": "checkin",
+                            "checked_in_at": checkin.checked_in_at.isoformat(),
                             "created_at": checkin.checked_in_at.isoformat(),
                             "reactions": [],
                             "user": {

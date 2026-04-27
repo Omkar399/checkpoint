@@ -199,11 +199,12 @@ export function AppSidebar() {
   }, []);
 
   const userInitials = user ? userInitialsFor(user.username) : "?";
+  const showChannelColumn = !route.onDashboard;
 
   return (
     <aside className="flex h-dvh shrink-0 bg-sidebar">
       {/* Server rail (64px) */}
-      <div className="flex w-16 flex-col items-center gap-2 overflow-hidden border-r border-[color:var(--color-ink-200)] py-3">
+      <div className="flex w-16 shrink-0 flex-col items-center gap-2 overflow-hidden border-r border-[color:var(--color-ink-200)] py-3">
         <RailItem
           href="/dashboard"
           isActive={route.onDashboard}
@@ -254,9 +255,40 @@ export function AppSidebar() {
             })
           )}
         </div>
+
+        {/* User footer in the rail — always visible */}
+        <div className="mt-auto flex flex-col items-center gap-1.5 pt-2">
+          <div className="my-1 h-px w-6 bg-[color:var(--color-ink-200)]" aria-hidden="true" />
+          <span
+            className="flex size-9 items-center justify-center rounded-full bg-[color:var(--color-ink-200)] ring-1 ring-[color:var(--color-ink-300)]"
+            title={user ? `${user.username} · ${user.email ?? ""}` : "Account"}
+            aria-label="Your account"
+          >
+            <Avatar className="size-9">
+              {user?.avatar_url ? (
+                <AvatarImage src={user.avatar_url} alt={user.username} />
+              ) : null}
+              <AvatarFallback className="text-[11px] font-bold">{userInitials}</AvatarFallback>
+            </Avatar>
+          </span>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => {
+              logout();
+              router.replace("/login");
+            }}
+            aria-label="Sign out"
+            title="Sign out"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="size-3.5" />
+          </Button>
+        </div>
       </div>
 
-      {/* Channel column (220px) */}
+      {/* Channel column — hidden on the dashboard */}
+      {showChannelColumn ? (
       <div className="flex w-[220px] flex-col">
         <div className="px-4 py-3">
           <p className="truncate text-base font-bold tracking-tight text-foreground">
@@ -334,39 +366,8 @@ export function AppSidebar() {
           </div>
         </div>
 
-        <div className="mt-auto bg-[color:var(--color-ink-100)] px-3 py-2.5">
-          <div className="flex items-center gap-2.5">
-            <Avatar size="sm">
-              {user?.avatar_url ? (
-                <AvatarImage src={user.avatar_url} alt={user.username} />
-              ) : null}
-              <AvatarFallback>{userInitials}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-foreground">
-                {user?.username ?? "Guest"}
-              </p>
-              {user?.email ? (
-                <p className="truncate text-[11px] text-muted-foreground">
-                  {user.email}
-                </p>
-              ) : null}
-            </div>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => {
-                logout();
-                router.replace("/login");
-              }}
-              aria-label="Sign out"
-              title="Sign out"
-            >
-              <LogOut className="size-3.5" />
-            </Button>
-          </div>
-        </div>
       </div>
+      ) : null}
     </aside>
   );
 }

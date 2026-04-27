@@ -104,6 +104,16 @@ export interface StreakResponse {
   streak: number;
 }
 
+export interface TodayChannelEntry {
+  channel_id: number;
+  channel_name: string;
+  channel_kind: ChannelKind;
+  server_id: number;
+  server_name: string;
+  checked_in: boolean;
+  last_checkin_at: string | null;
+}
+
 export interface LeaderboardRow {
   rank: number;
   user_id: number;

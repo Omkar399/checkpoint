@@ -43,7 +43,10 @@ function getTimestamp(item: Message | CheckInFeedItem): number {
   if ("content" in item && item.content !== undefined) {
     return new Date((item as Message).created_at).getTime();
   }
-  return new Date((item as CheckInFeedItem).checked_in_at).getTime();
+  // CheckIn — prefer checked_in_at, fall back to created_at (sent by WS in older builds)
+  const ci = item as CheckInFeedItem & { created_at?: string };
+  const raw = ci.checked_in_at ?? ci.created_at ?? new Date().toISOString();
+  return new Date(raw).getTime();
 }
 
 function initials(name: string): string {
@@ -147,11 +150,22 @@ export default function ChannelPage() {
       });
       return;
     }
-    const incoming = item as CheckInFeedItem;
+    const incoming = item as CheckInFeedItem & { created_at?: string };
     const cid = (incoming.checkin_id ?? incoming.id) as number;
+    // Normalize timestamp — WS may only send created_at; REST sends checked_in_at.
+    const checkedInAt = incoming.checked_in_at ?? incoming.created_at ?? new Date().toISOString();
     setCheckins((prev) => {
       if (prev.some((c) => c.id === cid)) return prev;
-      return [...prev, { ...incoming, id: cid, checkin_id: cid, message_type: "checkin" }];
+      return [
+        ...prev,
+        {
+          ...incoming,
+          id: cid,
+          checkin_id: cid,
+          message_type: "checkin",
+          checked_in_at: checkedInAt,
+        },
+      ];
     });
     // refresh dashboard state for today without another fetch
     setDashboard((prev) =>
@@ -505,6 +519,7 @@ export default function ChannelPage() {
               kind={channel?.kind ?? "numeric"}
               targetUnit={channel?.target_unit ?? null}
               targetLabel={channel?.target_label ?? null}
+              items={channel?.items ?? null}
               onSubmit={handleCheckinSubmit}
               trigger={
                 <Button type="button" variant="outline" size="sm">
@@ -513,7 +528,9 @@ export default function ChannelPage() {
                     ? "Mark done"
                     : channel?.kind === "freeform"
                       ? "Reflect"
-                      : "Check in"}
+                      : channel?.kind === "checklist"
+                        ? "Check items"
+                        : "Check in"}
                 </Button>
               }
             />
