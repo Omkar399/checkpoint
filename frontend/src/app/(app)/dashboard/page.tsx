@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { CreateServerDialog } from "@/components/create-server-dialog";
+import { DashboardStatsHero } from "@/components/dashboard-stats-hero";
 import { getServers } from "@/lib/api/servers";
 import type { Server } from "@/lib/api/types";
 
@@ -35,15 +36,17 @@ export default function DashboardPage() {
   }, [load]);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-8 py-10">
-      <div className="flex items-end justify-between gap-4">
+    <div className="mx-auto w-full max-w-6xl space-y-10 px-8 py-10">
+      <DashboardStatsHero />
+
+      <div className="flex items-end justify-between gap-4 border-t border-border pt-8">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Your servers
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Pick a channel to see today's check-ins.
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Library
           </p>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            Your servers
+          </h2>
         </div>
         <CreateServerDialog onCreated={() => load()} />
       </div>

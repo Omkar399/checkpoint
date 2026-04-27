@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useParams } from "next/navigation";
-import { FlameIcon, CircleCheckIcon } from "lucide-react";
+import { CircleCheckIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +10,16 @@ import { getChannel } from "@/lib/api/channels";
 import { getMessages } from "@/lib/api/messages";
 import { getCheckins, getDashboard, getStreak, createCheckin } from "@/lib/api/checkins";
 import { addReaction, removeReaction as removeReactionApi } from "@/lib/api/reactions";
+import { getUserHeatmap } from "@/lib/api/users";
 import { useWebSocket, type FeedItem, type ReactionEvent } from "@/hooks/use-websocket";
 import { useAuth } from "@/providers/auth-provider";
 import { CheckInCard } from "@/components/checkin-card";
 import { CheckInDialog } from "@/components/checkin-dialog";
 import { UserProfileDialog } from "@/components/user-profile-dialog";
 import { LeaderboardPanel } from "@/components/leaderboard-panel";
+import { StreakBadge } from "@/components/streak-badge";
+import { WeekPulse } from "@/components/week-pulse";
+import { computeWeekPulse, type WeekDayPulse } from "@/lib/stats";
 import { cn } from "@/lib/utils";
 import type {
   Channel,
@@ -68,6 +72,7 @@ export default function ChannelPage() {
   const [draft, setDraft] = useState("");
   const [profileUserId, setProfileUserId] = useState<number | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [pulse, setPulse] = useState<WeekDayPulse[] | null>(null);
 
   const openProfile = useCallback((userId: number) => {
     setProfileUserId(userId);
@@ -103,6 +108,24 @@ export default function ChannelPage() {
       cancelled = true;
     };
   }, [channelId]);
+
+  // Personal week pulse for this channel
+  useEffect(() => {
+    if (!channelId || !currentUser) return;
+    let cancelled = false;
+    getUserHeatmap(currentUser.id, channelId, new Date().getFullYear())
+      .then((res) => {
+        if (cancelled) return;
+        setPulse(computeWeekPulse(res.data));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPulse(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [channelId, currentUser, checkins.length]);
 
   const onMessage = useCallback((item: FeedItem) => {
     if (isMessage(item)) {
@@ -260,35 +283,44 @@ export default function ChannelPage() {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8 pb-40">
       {/* Header */}
-      <section className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              {channel ? `#${channel.name}` : "Loading…"}
-            </h1>
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-ink-200)] px-3 py-1 text-sm font-bold tracking-tight text-foreground"
-              title={`Current streak: ${streak} day${streak === 1 ? "" : "s"}`}
-            >
-              <FlameIcon className="size-3.5 text-primary" />
-              <span className="tabular-nums">{streak}</span>
-              <span className="text-muted-foreground font-normal">
-                day{streak === 1 ? "" : "s"}
-              </span>
-            </span>
+      <section className="flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Channel
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-4xl font-bold tracking-tight text-foreground">
+                {channel ? `#${channel.name}` : "Loading…"}
+              </h1>
+              <StreakBadge days={streak} size="md" />
+            </div>
+            {channel?.description ? (
+              <p className="text-sm text-muted-foreground max-w-2xl">{channel.description}</p>
+            ) : null}
           </div>
           <span
-            className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-ink-200)] px-3 py-1 text-xs font-semibold text-muted-foreground"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[color:var(--color-ink-200)] px-3 py-1 text-xs font-semibold text-muted-foreground"
             title={`Connection: ${statusLabel}`}
           >
             <span className={cn("size-1.5 rounded-full", statusDotClass)} aria-hidden="true" />
             <span className="uppercase tracking-wider">{statusLabel}</span>
           </span>
         </div>
-        {channel?.description ? (
-          <p className="text-sm text-muted-foreground">{channel.description}</p>
-        ) : null}
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {pulse ? (
+          <div className="rounded-lg bg-card p-4 max-w-md">
+            <div className="mb-2.5 flex items-baseline justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Your week
+              </span>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {pulse.reduce((s, d) => s + d.count, 0)} check-ins
+              </span>
+            </div>
+            <WeekPulse data={pulse} />
+          </div>
+        ) : null}
       </section>
 
       {/* Daily dashboard */}
