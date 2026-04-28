@@ -10,3 +10,4 @@ venv/
 *.aux
 *.log
 *.out
+.run/

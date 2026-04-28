@@ -10,9 +10,10 @@ import { computeCoachQuote, poolSizeForInputs } from "@/lib/coach";
 import { CoachQuoteCard } from "@/components/coach-quote";
 import { TodayChecklist } from "@/components/today-checklist";
 import { WeekPulse } from "@/components/week-pulse";
+import { ActivityHeatmap } from "@/components/activity-heatmap";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { WeekDayPulse } from "@/lib/stats";
-import type { TodayChannelEntry } from "@/lib/api/types";
+import type { HeatmapEntry, TodayChannelEntry } from "@/lib/api/types";
 
 const numberFmt = new Intl.NumberFormat();
 
@@ -72,6 +73,7 @@ export function DashboardStatsHero({ fallbackName }: DashboardStatsHeroProps) {
   const { user } = useAuth();
   const [stats, setStats] = useState<ComputedStats | null>(null);
   const [pulse, setPulse] = useState<WeekDayPulse[] | null>(null);
+  const [heatmap, setHeatmap] = useState<HeatmapEntry[] | null>(null);
   const [serverCount, setServerCount] = useState<number | null>(null);
   const [today, setToday] = useState<TodayChannelEntry[] | null>(null);
 
@@ -87,6 +89,7 @@ export function DashboardStatsHero({ fallbackName }: DashboardStatsHeroProps) {
         if (cancelled) return;
         setStats(computeStats(heatmapRes.data));
         setPulse(computeWeekPulse(heatmapRes.data));
+        setHeatmap(heatmapRes.data);
         setServerCount(serversRes.data.length);
         setToday(todayRes.data);
       })
@@ -94,6 +97,7 @@ export function DashboardStatsHero({ fallbackName }: DashboardStatsHeroProps) {
         if (cancelled) return;
         setStats({ totalCheckins: 0, activeDays: 0, currentStreak: 0, bestStreak: 0 });
         setPulse(null);
+        setHeatmap([]);
         setServerCount(0);
         setToday([]);
       });
@@ -270,6 +274,20 @@ export function DashboardStatsHero({ fallbackName }: DashboardStatsHeroProps) {
             </span>
           </div>
           <WeekPulse data={pulse} />
+        </div>
+      ) : null}
+
+      {heatmap ? (
+        <div className="rounded-lg bg-card p-5">
+          <div className="mb-3 flex items-baseline justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              Activity in {new Date().getFullYear()}
+            </span>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {stats?.totalCheckins ?? 0} check-ins · {stats?.activeDays ?? 0} active days
+            </span>
+          </div>
+          <ActivityHeatmap data={heatmap} />
         </div>
       ) : null}
     </section>
