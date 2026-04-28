@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { Users2Icon } from "lucide-react";
 import { CreateServerDialog } from "@/components/create-server-dialog";
 import { DashboardStatsHero } from "@/components/dashboard-stats-hero";
 import { getServers } from "@/lib/api/servers";
@@ -58,10 +59,16 @@ export default function DashboardPage() {
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       {!loading && servers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-          <p className="text-sm text-muted-foreground">
-            No servers yet. Create your first one or accept an invite to get started.
-          </p>
+        <div className="flex flex-col items-center justify-center gap-4 rounded-lg bg-card py-16 text-center">
+          <div className="flex size-14 items-center justify-center rounded-full bg-[color:var(--color-ink-200)] ring-1 ring-[color:var(--color-ink-400)]">
+            <Users2Icon className="size-6 text-muted-foreground" />
+          </div>
+          <div className="space-y-1 max-w-[320px]">
+            <p className="text-base font-bold text-foreground">No servers yet</p>
+            <p className="text-sm text-muted-foreground">
+              Create a server to start tracking a daily habit with your crew, or accept an invite.
+            </p>
+          </div>
           <CreateServerDialog onCreated={() => load()} />
         </div>
       ) : null}

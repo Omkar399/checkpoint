@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createInvite, getInvites } from "@/lib/api/invites";
+import { parseTs } from "@/lib/utils";
 import type { Invite } from "@/lib/api/types";
 
 interface InviteDialogProps {
@@ -183,7 +184,7 @@ export function InviteDialog({ serverId, trigger }: InviteDialogProps) {
                       ? `${invite.use_count}/${invite.max_uses} uses`
                       : `${invite.use_count} uses`;
                   const expiresLabel = invite.expires_at
-                    ? `expires ${new Date(invite.expires_at).toLocaleString()}`
+                    ? `expires ${parseTs(invite.expires_at).toLocaleString()}`
                     : "no expiry";
                   return (
                     <li

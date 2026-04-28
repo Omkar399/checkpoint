@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { ActivityHeatmap } from "@/components/activity-heatmap";
 import { getUserHeatmap, getUserProfile } from "@/lib/api/users";
+import { parseTs } from "@/lib/utils";
 import type { HeatmapEntry, User } from "@/lib/api/types";
 
 interface UserProfileDialogProps {
@@ -38,7 +39,7 @@ function initials(name: string): string {
 
 function formatJoinDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleDateString(undefined, {
+    return parseTs(iso).toLocaleDateString(undefined, {
       year: "numeric",
       month: "long",
       day: "numeric",

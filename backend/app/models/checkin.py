@@ -14,7 +14,8 @@ class CheckIn(Base):
     channel_id = Column(Integer, ForeignKey("channels.id"), nullable=False)
     value = Column(Float, nullable=True)
     note = Column(Text, nullable=True)
-    checked_items = Column(Text, nullable=True)  # JSON array of indices for checklist kind
+    checked_items = Column(Text, nullable=True)  # JSON array of indices (binary checklist items)
+    field_states = Column(Text, nullable=True)  # JSON array of {idx, checked?, value?} for mixed-type checklists
     checked_in_at = Column(
         DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
     )

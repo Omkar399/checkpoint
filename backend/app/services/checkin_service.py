@@ -17,6 +17,7 @@ def create_checkin(
     value: float | None = None,
     note: str | None = None,
     checked_items: list[int] | None = None,
+    field_states: list[dict] | None = None,
 ) -> CheckIn:
     checkin = CheckIn(
         user_id=user_id,
@@ -24,6 +25,7 @@ def create_checkin(
         value=value,
         note=note,
         checked_items=json.dumps(checked_items) if checked_items is not None else None,
+        field_states=json.dumps(field_states) if field_states is not None else None,
     )
     db.add(checkin)
     db.commit()
@@ -46,6 +48,32 @@ def parse_checked_items(raw: str | None) -> list[int] | None:
     except (json.JSONDecodeError, ValueError, TypeError):
         return None
     return None
+
+
+def parse_field_states(raw: str | None) -> list[dict] | None:
+    """Parse the field_states JSON blob into a list of {idx, checked?, value?} dicts."""
+    if not raw:
+        return None
+    try:
+        parsed = json.loads(raw)
+    except (json.JSONDecodeError, ValueError, TypeError):
+        return None
+    if not isinstance(parsed, list):
+        return None
+    out: list[dict] = []
+    for entry in parsed:
+        if not isinstance(entry, dict):
+            continue
+        idx = entry.get("idx")
+        if not isinstance(idx, (int, float)) or isinstance(idx, bool):
+            continue
+        item: dict = {"idx": int(idx)}
+        if "checked" in entry and isinstance(entry["checked"], bool):
+            item["checked"] = entry["checked"]
+        if "value" in entry and isinstance(entry["value"], (int, float)) and not isinstance(entry["value"], bool):
+            item["value"] = float(entry["value"])
+        out.append(item)
+    return out
 
 
 def get_channel_checkins(

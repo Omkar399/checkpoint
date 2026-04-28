@@ -6,10 +6,22 @@ from pydantic import BaseModel, ConfigDict
 from app.schemas.user import UserResponse
 
 
+class FieldState(BaseModel):
+    """Per-item state for a mixed-type checklist check-in.
+
+    `idx` is the position in the channel's items list. Either `checked` (for
+    binary items) or `value` (for numeric items) should be set.
+    """
+    idx: int
+    checked: Optional[bool] = None
+    value: Optional[float] = None
+
+
 class CheckInCreate(BaseModel):
     value: Optional[float] = None
     note: Optional[str] = None
-    checked_items: Optional[list[int]] = None  # for checklist kind
+    checked_items: Optional[list[int]] = None  # legacy, all-binary checklist
+    field_states: Optional[list[FieldState]] = None  # mixed-type checklist
 
 
 class ReactionSummaryInline(BaseModel):
@@ -28,6 +40,7 @@ class CheckInResponse(BaseModel):
     value: Optional[float] = None
     note: Optional[str] = None
     checked_items: Optional[list[int]] = None
+    field_states: Optional[list[FieldState]] = None
     checked_in_at: datetime
     user: UserResponse
     reactions: list[ReactionSummaryInline] = []

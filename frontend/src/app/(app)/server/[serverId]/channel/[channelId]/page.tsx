@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useParams } from "next/navigation";
-import { CircleCheckIcon } from "lucide-react";
+import { CircleCheckIcon, MessageSquareDashedIcon, SunriseIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import { LeaderboardPanel } from "@/components/leaderboard-panel";
 import { StreakBadge } from "@/components/streak-badge";
 import { WeekPulse } from "@/components/week-pulse";
 import { computeWeekPulse, type WeekDayPulse } from "@/lib/stats";
-import { cn } from "@/lib/utils";
+import { cn, parseTs } from "@/lib/utils";
 import type {
   Channel,
   CheckIn,
@@ -43,12 +43,12 @@ function isCheckin(item: FeedItem): item is CheckInFeedItem {
 
 function getTimestamp(item: Message | CheckInFeedItem): number {
   if ("content" in item && item.content !== undefined) {
-    return new Date((item as Message).created_at).getTime();
+    return parseTs((item as Message).created_at).getTime();
   }
   // CheckIn — prefer checked_in_at, fall back to created_at (sent by WS in older builds)
   const ci = item as CheckInFeedItem & { created_at?: string };
   const raw = ci.checked_in_at ?? ci.created_at ?? new Date().toISOString();
-  return new Date(raw).getTime();
+  return parseTs(raw).getTime();
 }
 
 function initials(name: string): string {
@@ -304,14 +304,22 @@ export default function ChannelPage() {
   async function handleCheckinSubmit(
     value: number | null,
     note: string | null,
-    checkedItems?: number[] | null,
+    payload?: {
+      checkedItems?: number[] | null;
+      fieldStates?: Array<{ idx: number; checked?: boolean; value?: number }> | null;
+    },
   ) {
     if (!channelId) return;
     if (connected && connectionType === "websocket") {
-      sendCheckin(value, note, checkedItems);
+      sendCheckin(value, note, payload);
       return;
     }
-    const res = await createCheckin(channelId, { value, note, checked_items: checkedItems });
+    const res = await createCheckin(channelId, {
+      value,
+      note,
+      checked_items: payload?.checkedItems,
+      field_states: payload?.fieldStates,
+    });
     const data = res.data;
     setCheckins((prev) => {
       if (prev.some((c) => c.id === data.id)) return prev;
@@ -467,10 +475,26 @@ export default function ChannelPage() {
         <div ref={scrollRef} onScroll={handleScroll} className="flex-1 min-h-0 overflow-y-auto">
           <ul className="mx-auto w-full max-w-4xl space-y-1 px-6 py-6 text-sm">
             {feed.length === 0 ? (
-              <li className="rounded-lg bg-card p-6 text-center text-sm text-muted-foreground">
-                {feedFilter === "today"
-                  ? "No check-ins yet today. Be the first."
-                  : "No messages yet. Be the first to check in."}
+              <li className="flex flex-col items-center gap-3 rounded-lg bg-card p-10 text-center">
+                <div className="flex size-12 items-center justify-center rounded-full bg-[color:var(--color-ink-200)] ring-1 ring-[color:var(--color-ink-400)]">
+                  {feedFilter === "today" ? (
+                    <SunriseIcon className="size-5 text-muted-foreground" />
+                  ) : (
+                    <MessageSquareDashedIcon className="size-5 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="space-y-1 max-w-[260px]">
+                  <p className="text-sm font-bold text-foreground">
+                    {feedFilter === "today"
+                      ? "No check-ins yet today"
+                      : "Quiet in here"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {feedFilter === "today"
+                      ? "Be the first to log a check-in. Your crew sees it instantly."
+                      : "No messages yet. Send one or check in to start the thread."}
+                  </p>
+                </div>
               </li>
             ) : (
               feed.map((item) =>
@@ -510,7 +534,7 @@ export default function ChannelPage() {
                           {item.user.username}
                         </button>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(item.created_at).toLocaleTimeString([], {
+                          {parseTs(item.created_at).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}

@@ -50,6 +50,7 @@ def _serialize_checkin(checkin, current_user_id: int) -> dict:
         "value": checkin.value,
         "note": checkin.note,
         "checked_items": checkin_service.parse_checked_items(checkin.checked_items),
+        "field_states": checkin_service.parse_field_states(checkin.field_states),
         "checked_in_at": checkin.checked_in_at,
         "user": checkin.user,
         "reactions": list(emoji_map.values()),
@@ -66,6 +67,11 @@ def create_checkin(
     current_user: User = Depends(get_current_user),
 ):
     _require_channel_member(db, current_user.id, channel_id)
+    field_states_dump = (
+        [fs.model_dump(exclude_none=True) for fs in req.field_states]
+        if req.field_states is not None
+        else None
+    )
     checkin = checkin_service.create_checkin(
         db,
         user_id=current_user.id,
@@ -73,6 +79,7 @@ def create_checkin(
         value=req.value,
         note=req.note,
         checked_items=req.checked_items,
+        field_states=field_states_dump,
     )
     return _serialize_checkin(checkin, current_user.id)
 

@@ -18,7 +18,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { createChannel } from "@/lib/api/channels";
-import type { Channel, ChannelKind } from "@/lib/api/types";
+import type { Channel, ChannelKind, ChannelItem, FieldType } from "@/lib/api/types";
+
+interface DraftItem {
+  label: string;
+  type: FieldType;
+  unit: string;
+}
 
 interface CreateChannelDialogProps {
   serverId: number;
@@ -70,7 +76,9 @@ export function CreateChannelDialog({ serverId, onCreated, trigger }: CreateChan
   const [description, setDescription] = useState("");
   const [targetUnit, setTargetUnit] = useState("");
   const [targetLabel, setTargetLabel] = useState("");
-  const [items, setItems] = useState<string[]>([""]);
+  const [items, setItems] = useState<DraftItem[]>([
+    { label: "", type: "binary", unit: "" },
+  ]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,19 +88,23 @@ export function CreateChannelDialog({ serverId, onCreated, trigger }: CreateChan
     setDescription("");
     setTargetUnit("");
     setTargetLabel("");
-    setItems([""]);
+    setItems([{ label: "", type: "binary", unit: "" }]);
     setError(null);
     setSubmitting(false);
   }
 
-  function updateItem(idx: number, value: string) {
-    setItems((prev) => prev.map((it, i) => (i === idx ? value : it)));
+  function updateItem(idx: number, patch: Partial<DraftItem>) {
+    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
   }
   function addItem() {
-    setItems((prev) => [...prev, ""]);
+    setItems((prev) => [...prev, { label: "", type: "binary", unit: "" }]);
   }
   function removeItem(idx: number) {
-    setItems((prev) => (prev.length === 1 ? [""] : prev.filter((_, i) => i !== idx)));
+    setItems((prev) =>
+      prev.length === 1
+        ? [{ label: "", type: "binary", unit: "" }]
+        : prev.filter((_, i) => i !== idx),
+    );
   }
 
   async function onSubmit(e: FormEvent) {
@@ -102,9 +114,22 @@ export function CreateChannelDialog({ serverId, onCreated, trigger }: CreateChan
       setError("Name must be 1-100 characters.");
       return;
     }
-    let cleanedItems: string[] | null = null;
+    let cleanedItems: ChannelItem[] | null = null;
     if (kind === "checklist") {
-      cleanedItems = items.map((it) => it.trim()).filter((it) => it.length > 0);
+      cleanedItems = items
+        .map((it) => ({
+          label: it.label.trim(),
+          type: it.type,
+          unit: it.unit.trim(),
+        }))
+        .filter((it) => it.label.length > 0)
+        .map((it): ChannelItem => {
+          if (it.type === "numeric") {
+            return { label: it.label, type: "numeric", unit: it.unit || null };
+          }
+          // Use plain string for binary items (smaller payload, legacy-compatible)
+          return it.label;
+        });
       if (cleanedItems.length === 0) {
         setError("Add at least one checklist item.");
         return;
@@ -265,28 +290,73 @@ export function CreateChannelDialog({ serverId, onCreated, trigger }: CreateChan
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Checklist items
                 </Label>
-                <p className="text-xs text-muted-foreground -mt-1">
-                  Members tick off whichever they did each day.
+                <p className="-mt-1 text-xs text-muted-foreground">
+                  Mix binary checkboxes with numeric inputs. Members fill them in each day.
                 </p>
                 <ul className="space-y-2">
                   {items.map((item, idx) => (
-                    <li key={idx} className="flex items-center gap-2">
-                      <Input
-                        value={item}
-                        onChange={(e) => updateItem(idx, e.target.value)}
-                        placeholder={`Item ${idx + 1}`}
-                        maxLength={120}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => removeItem(idx)}
-                        aria-label={`Remove item ${idx + 1}`}
-                        disabled={items.length === 1 && item.length === 0}
-                      >
-                        <XIcon />
-                      </Button>
+                    <li
+                      key={idx}
+                      className="flex flex-col gap-2 rounded-md border border-[color:var(--color-ink-300)] bg-[color:var(--color-ink-100)] p-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        {/* Type toggle */}
+                        <div className="flex shrink-0 rounded-full bg-[color:var(--color-ink-200)] p-0.5">
+                          {(["binary", "numeric"] as FieldType[]).map((t) => {
+                            const active = item.type === t;
+                            return (
+                              <button
+                                key={t}
+                                type="button"
+                                onClick={() => updateItem(idx, { type: t })}
+                                className={cn(
+                                  "rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors",
+                                  active
+                                    ? "bg-foreground text-background"
+                                    : "text-muted-foreground hover:text-foreground",
+                                )}
+                                aria-pressed={active}
+                              >
+                                {t === "binary" ? "✓" : "#"} {t}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <Input
+                          value={item.label}
+                          onChange={(e) => updateItem(idx, { label: e.target.value })}
+                          placeholder={
+                            item.type === "binary"
+                              ? `Made bed`
+                              : `Meditation`
+                          }
+                          maxLength={120}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => removeItem(idx)}
+                          aria-label={`Remove item ${idx + 1}`}
+                          disabled={items.length === 1 && item.label.length === 0}
+                        >
+                          <XIcon />
+                        </Button>
+                      </div>
+                      {item.type === "numeric" ? (
+                        <div className="flex items-center gap-2 pl-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            Unit
+                          </span>
+                          <Input
+                            value={item.unit}
+                            onChange={(e) => updateItem(idx, { unit: e.target.value })}
+                            placeholder="min, pages, reps…"
+                            maxLength={32}
+                            className="h-8 max-w-[200px]"
+                          />
+                        </div>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

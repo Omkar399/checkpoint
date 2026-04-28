@@ -48,3 +48,6 @@ def run_startup_migrations(engine: Engine) -> None:
     # checkins.checked_items — added with the checklist kind.
     # JSON-serialized array of integers (item indices) or NULL.
     _add_column_if_missing(engine, "checkins", "checked_items", "TEXT")
+    # checkins.field_states — added with mixed-type checklist items.
+    # JSON-serialized array of {idx, checked?, value?} entries or NULL.
+    _add_column_if_missing(engine, "checkins", "field_states", "TEXT")

@@ -128,8 +128,21 @@ export function useWebSocket(channelId: number | null, { onMessage, onReaction }
 
   const sendMessage = useCallback((content: string) => send({ type: "send_message", content }), [send]);
   const sendCheckin = useCallback(
-    (value: number | null, note: string | null, checkedItems?: number[] | null) =>
-      send({ type: "send_checkin", value, note, checked_items: checkedItems ?? null }),
+    (
+      value: number | null,
+      note: string | null,
+      payload?: {
+        checkedItems?: number[] | null;
+        fieldStates?: Array<{ idx: number; checked?: boolean; value?: number }> | null;
+      },
+    ) =>
+      send({
+        type: "send_checkin",
+        value,
+        note,
+        checked_items: payload?.checkedItems ?? null,
+        field_states: payload?.fieldStates ?? null,
+      }),
     [send],
   );
   const sendReaction = useCallback(

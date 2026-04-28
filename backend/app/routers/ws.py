@@ -111,6 +111,23 @@ async def websocket_endpoint(
                             int(i) for i in raw_items
                             if isinstance(i, (int, float)) and not isinstance(i, bool)
                         ]
+                    raw_fields = data.get("field_states")
+                    parsed_fields: list[dict] | None = None
+                    if isinstance(raw_fields, list):
+                        parsed_fields = []
+                        for entry in raw_fields:
+                            if not isinstance(entry, dict):
+                                continue
+                            idx = entry.get("idx")
+                            if not isinstance(idx, (int, float)) or isinstance(idx, bool):
+                                continue
+                            item: dict = {"idx": int(idx)}
+                            if isinstance(entry.get("checked"), bool):
+                                item["checked"] = entry["checked"]
+                            v = entry.get("value")
+                            if isinstance(v, (int, float)) and not isinstance(v, bool):
+                                item["value"] = float(v)
+                            parsed_fields.append(item)
                     checkin = checkin_service.create_checkin(
                         db,
                         user_id=user_id,
@@ -118,6 +135,7 @@ async def websocket_endpoint(
                         value=data.get("value"),
                         note=data.get("note"),
                         checked_items=parsed_items,
+                        field_states=parsed_fields,
                     )
                     checkin_data = {
                         "type": "new_checkin",
@@ -130,6 +148,9 @@ async def websocket_endpoint(
                             "note": checkin.note,
                             "checked_items": checkin_service.parse_checked_items(
                                 checkin.checked_items
+                            ),
+                            "field_states": checkin_service.parse_field_states(
+                                checkin.field_states
                             ),
                             "message_type": "checkin",
                             "checked_in_at": checkin.checked_in_at.isoformat(),

@@ -122,9 +122,15 @@ export function LeaderboardPanel({
             ))}
           </ol>
         ) : rows.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">
-            No check-ins this month yet.
-          </p>
+          <div className="flex flex-col items-center gap-2 py-6 text-center">
+            <div className="flex size-10 items-center justify-center rounded-full bg-[color:var(--color-ink-200)] ring-1 ring-[color:var(--color-ink-400)]">
+              <TrophyIcon className="size-4 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-bold text-foreground">No check-ins yet</p>
+            <p className="text-xs text-muted-foreground max-w-[180px]">
+              The first check-in this month claims rank #1.
+            </p>
+          </div>
         ) : (
           <ol className="flex flex-col">
             {rows.map((row) => (

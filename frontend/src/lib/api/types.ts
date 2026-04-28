@@ -31,6 +31,18 @@ export interface ServerMember {
 
 export type ChannelKind = "numeric" | "binary" | "freeform" | "checklist";
 
+export type FieldType = "binary" | "numeric";
+
+/** A typed item inside a checklist channel. Plain strings are treated as binary. */
+export interface ChannelFieldItem {
+  label: string;
+  type: FieldType;
+  unit?: string | null;
+}
+
+/** Items in checklist channels can be either plain strings (legacy/binary) or typed objects. */
+export type ChannelItem = string | ChannelFieldItem;
+
 export interface Channel {
   id: number;
   server_id: number;
@@ -39,9 +51,15 @@ export interface Channel {
   target_unit: string | null;
   target_label: string | null;
   kind: ChannelKind;
-  items: string[] | null;
+  items: ChannelItem[] | null;
   created_by: number;
   created_at: string;
+}
+
+/** Normalize any ChannelItem to a structured ChannelFieldItem. */
+export function normalizeChannelItem(item: ChannelItem): ChannelFieldItem {
+  if (typeof item === "string") return { label: item, type: "binary" };
+  return { label: item.label, type: item.type, unit: item.unit ?? null };
 }
 
 export interface ChannelMember {
@@ -76,6 +94,7 @@ export interface CheckIn {
   value: number | null;
   note: string | null;
   checked_items: number[] | null;
+  field_states: FieldState[] | null;
   checked_in_at: string;
   user: User;
   reactions: ReactionSummary[];
@@ -85,6 +104,7 @@ export interface CheckInCreate {
   value?: number | null;
   note?: string | null;
   checked_items?: number[] | null;
+  field_states?: FieldState[] | null;
 }
 
 export interface DailyStatusEntry {
@@ -144,7 +164,14 @@ export interface CreateChannelRequest {
   target_unit?: string | null;
   target_label?: string | null;
   kind?: ChannelKind;
-  items?: string[] | null;
+  items?: ChannelItem[] | null;
+}
+
+/** Per-item state captured at check-in time for a mixed-type checklist. */
+export interface FieldState {
+  idx: number;
+  checked?: boolean; // for binary items
+  value?: number; // for numeric items
 }
 
 export type WsEvent =

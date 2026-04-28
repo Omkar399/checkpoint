@@ -17,18 +17,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import type { ChannelKind } from "@/lib/api/types";
+import { normalizeChannelItem } from "@/lib/api/types";
+import type { ChannelItem, ChannelKind, FieldState } from "@/lib/api/types";
 
 interface CheckInDialogProps {
   trigger: ReactNode;
   kind?: ChannelKind;
   targetUnit?: string | null;
   targetLabel?: string | null;
-  items?: string[] | null;
+  items?: ChannelItem[] | null;
   onSubmit: (
     value: number | null,
     note: string | null,
-    checkedItems?: number[] | null,
+    payload?: {
+      checkedItems?: number[] | null;
+      fieldStates?: FieldState[] | null;
+    },
   ) => Promise<void> | void;
 }
 
@@ -44,13 +48,18 @@ export function CheckInDialog({
   const [value, setValue] = useState("");
   const [note, setNote] = useState("");
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
+  const [numericValues, setNumericValues] = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset checked items when dialog opens for a checklist channel
+  const normalizedItems = (items ?? []).map(normalizeChannelItem);
+  const hasMixedTypes = normalizedItems.some((it) => it.type === "numeric");
+
+  // Reset state when dialog opens for a checklist channel
   useEffect(() => {
     if (open && kind === "checklist") {
       setCheckedItems(new Set());
+      setNumericValues({});
     }
   }, [open, kind]);
 
@@ -63,10 +72,15 @@ export function CheckInDialog({
     });
   }
 
+  function setNumericValue(idx: number, raw: string) {
+    setNumericValues((prev) => ({ ...prev, [idx]: raw }));
+  }
+
   function reset() {
     setValue("");
     setNote("");
     setCheckedItems(new Set());
+    setNumericValues({});
     setError(null);
     setSubmitting(false);
   }
@@ -78,6 +92,7 @@ export function CheckInDialog({
 
     let valueToSend: number | null;
     let checkedItemsToSend: number[] | null = null;
+    let fieldStatesToSend: FieldState[] | null = null;
 
     if (kind === "binary") {
       valueToSend = 1;
@@ -88,13 +103,39 @@ export function CheckInDialog({
       }
       valueToSend = null;
     } else if (kind === "checklist") {
-      if (checkedItems.size === 0) {
-        setError("Tick at least one item.");
+      // Build field_states for any binary tick or non-empty numeric value
+      const states: FieldState[] = [];
+      for (let idx = 0; idx < normalizedItems.length; idx++) {
+        const item = normalizedItems[idx];
+        if (item.type === "binary") {
+          if (checkedItems.has(idx)) {
+            states.push({ idx, checked: true });
+          }
+        } else {
+          const raw = (numericValues[idx] ?? "").trim();
+          if (raw === "") continue;
+          const parsed = Number(raw);
+          if (Number.isNaN(parsed)) {
+            setError(`"${item.label}" needs a valid number.`);
+            return;
+          }
+          states.push({ idx, value: parsed });
+        }
+      }
+
+      if (states.length === 0) {
+        setError("Tick or fill at least one item.");
         return;
       }
-      const sorted = Array.from(checkedItems).sort((a, b) => a - b);
-      checkedItemsToSend = sorted;
-      valueToSend = sorted.length;
+
+      // For backwards compat, also send the binary indices as checked_items
+      const binaryIdxs = states
+        .filter((s) => s.checked === true)
+        .map((s) => s.idx)
+        .sort((a, b) => a - b);
+      checkedItemsToSend = binaryIdxs.length > 0 ? binaryIdxs : null;
+      fieldStatesToSend = states;
+      valueToSend = states.length; // count of items interacted with
     } else {
       // numeric
       const trimmedValue = value.trim();
@@ -115,7 +156,7 @@ export function CheckInDialog({
       await onSubmit(
         valueToSend,
         trimmedNote === "" ? null : trimmedNote,
-        checkedItemsToSend,
+        { checkedItems: checkedItemsToSend, fieldStates: fieldStatesToSend },
       );
       reset();
       setOpen(false);
@@ -173,45 +214,95 @@ export function CheckInDialog({
           <DialogDescription>{headerCopy.desc}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {kind === "checklist" && items && items.length > 0 ? (
+          {kind === "checklist" && normalizedItems.length > 0 ? (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Items
                 </Label>
                 <span className="text-xs tabular-nums text-muted-foreground">
-                  {checkedItems.size} / {items.length}
+                  {(() => {
+                    const binaryDone = normalizedItems.filter(
+                      (it, i) => it.type === "binary" && checkedItems.has(i),
+                    ).length;
+                    const numericDone = normalizedItems.filter(
+                      (it, i) =>
+                        it.type === "numeric" && (numericValues[i] ?? "").trim() !== "",
+                    ).length;
+                    return `${binaryDone + numericDone} / ${normalizedItems.length}`;
+                  })()}
                 </span>
               </div>
               <ul className="max-h-72 space-y-1 overflow-y-auto rounded-lg bg-[color:var(--color-ink-100)] p-1.5">
-                {items.map((item, idx) => {
-                  const isChecked = checkedItems.has(idx);
-                  return (
-                    <li key={idx}>
-                      <button
-                        type="button"
-                        onClick={() => toggleItem(idx)}
-                        className={cn(
-                          "group flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                          isChecked
-                            ? "bg-primary/10 text-foreground"
-                            : "text-muted-foreground hover:bg-[color:var(--color-ink-200)] hover:text-foreground",
-                        )}
-                      >
-                        <span
+                {normalizedItems.map((item, idx) => {
+                  if (item.type === "binary") {
+                    const isChecked = checkedItems.has(idx);
+                    return (
+                      <li key={idx}>
+                        <button
+                          type="button"
+                          onClick={() => toggleItem(idx)}
                           className={cn(
-                            "flex size-5 shrink-0 items-center justify-center rounded border transition-colors",
+                            "group flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary",
                             isChecked
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-[color:var(--color-ink-600)] bg-transparent group-hover:border-foreground",
+                              ? "bg-primary/10 text-foreground"
+                              : "text-muted-foreground hover:bg-[color:var(--color-ink-200)] hover:text-foreground",
                           )}
                         >
-                          {isChecked ? <CheckCircle2Icon className="size-3.5" /> : null}
+                          <span
+                            className={cn(
+                              "flex size-5 shrink-0 items-center justify-center rounded border transition-colors",
+                              isChecked
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-[color:var(--color-ink-600)] bg-transparent group-hover:border-foreground",
+                            )}
+                          >
+                            {isChecked ? <CheckCircle2Icon className="size-3.5" /> : null}
+                          </span>
+                          <span className={cn("flex-1", isChecked ? "font-bold" : null)}>
+                            {item.label}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  }
+                  // numeric item
+                  const raw = numericValues[idx] ?? "";
+                  const filled = raw.trim() !== "";
+                  return (
+                    <li key={idx} className="rounded-md px-2.5 py-2">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className={cn(
+                            "shrink-0 text-[10px] font-bold uppercase tracking-wider",
+                            filled ? "text-primary" : "text-muted-foreground",
+                          )}
+                        >
+                          #
                         </span>
-                        <span className={cn("flex-1", isChecked ? "font-bold" : null)}>
-                          {item}
+                        <span
+                          className={cn(
+                            "flex-1 text-sm",
+                            filled ? "font-bold text-foreground" : "text-muted-foreground",
+                          )}
+                        >
+                          {item.label}
                         </span>
-                      </button>
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          step="any"
+                          value={raw}
+                          onChange={(e) => setNumericValue(idx, e.target.value)}
+                          placeholder={item.unit ? `e.g. 30 ${item.unit}` : "value"}
+                          className="h-8 w-32 text-sm"
+                        />
+                        {item.unit ? (
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {item.unit}
+                          </span>
+                        ) : null}
+                      </div>
                     </li>
                   );
                 })}
@@ -296,7 +387,9 @@ export function CheckInDialog({
                   : kind === "freeform"
                     ? "Save reflection"
                     : kind === "checklist"
-                      ? `Save (${checkedItems.size})`
+                      ? hasMixedTypes
+                        ? "Save"
+                        : `Save (${checkedItems.size})`
                       : "Check in"}
             </Button>
           </DialogFooter>

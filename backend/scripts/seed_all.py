@@ -438,19 +438,32 @@ def midnight_utc(d: datetime) -> datetime:
 
 
 def seed_checkins_for_member(db, channel: Channel, user: User, profile: dict, days: int = 30) -> list[int]:
-    today = midnight_utc(datetime.now(timezone.utc))
+    now = datetime.now(timezone.utc)
+    today = midnight_utc(now)
+    # Cap "today's" check-in to be at least 2 hours in the past so the demo
+    # never has timestamps that look like the future.
+    today_cap = now - timedelta(hours=2)
     created: list[int] = []
     items_count = len(json.loads(channel.items)) if channel.items else 0
 
     for offset in range(days, -1, -1):
         if random.random() > profile["consistency"]:
             continue
-        ts = today - timedelta(days=offset)
-        ts = ts.replace(
-            hour=random.choice([6, 8, 12, 17, 18, 19, 20, 21]),
-            minute=random.randint(0, 59),
-            second=random.randint(0, 59),
-        )
+        if offset == 0:
+            # If less than ~2h has elapsed since UTC midnight, skip "today"
+            # entirely rather than generate something newer than today_cap.
+            if today_cap <= today:
+                continue
+            # Pick a random moment between today's midnight and 2h-before-now.
+            window_seconds = int((today_cap - today).total_seconds())
+            ts = today + timedelta(seconds=random.randint(60, window_seconds))
+        else:
+            ts = today - timedelta(days=offset)
+            ts = ts.replace(
+                hour=random.choice([6, 8, 12, 17, 18, 19, 20, 21]),
+                minute=random.randint(0, 59),
+                second=random.randint(0, 59),
+            )
 
         # Skip if a check-in already exists for this user/channel/day
         day_start = ts.replace(hour=0, minute=0, second=0)
@@ -631,7 +644,9 @@ def seed_coach_messages(
 def seed_messages(db, channel: Channel, lines, username_to_id: dict[str, int]):
     if db.query(Message).filter(Message.channel_id == channel.id).count() >= 4:
         return
-    base = datetime.now(timezone.utc) - timedelta(hours=random.randint(2, 12))
+    # Anchor the chat thread between 6 and 3 hours ago, with each message ~6 min apart.
+    # That way the latest seeded message is always at least ~2h in the past.
+    base = datetime.now(timezone.utc) - timedelta(hours=random.randint(3, 6))
     for i, (uname, content) in enumerate(lines):
         uid = username_to_id.get(uname)
         if uid is None:

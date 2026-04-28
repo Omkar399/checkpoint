@@ -80,20 +80,21 @@ async def lifespan(app: FastAPI):
 
     # Start APScheduler with two cron jobs (UTC).
     scheduler = AsyncIOScheduler(timezone="UTC")
+    # Per Sprint 3 spec: daily summary at 9 PM UTC, inactivity nudges at 9 AM UTC.
     scheduler.add_job(
         _run_daily_summary_job,
-        CronTrigger(hour=9, minute=0),
+        CronTrigger(hour=21, minute=0),
         id="coachbot_daily_summary",
         replace_existing=True,
     )
     scheduler.add_job(
         _run_inactivity_nudge_job,
-        CronTrigger(hour=18, minute=0),
+        CronTrigger(hour=9, minute=0),
         id="coachbot_inactivity_nudges",
         replace_existing=True,
     )
     scheduler.start()
-    print("[coachbot] scheduler started: daily summary 09:00 UTC, nudges 18:00 UTC")
+    print("[coachbot] scheduler started: daily summary 21:00 UTC, nudges 09:00 UTC")
 
     app.state.scheduler = scheduler
 

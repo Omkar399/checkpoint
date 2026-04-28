@@ -81,7 +81,24 @@ npm run dev
 cd backend && source .venv/bin/activate && pytest -v
 ```
 
-16 tests covering auth, channels, check-ins, leaderboard, reactions.
+20 API tests covering auth, channels, check-ins, leaderboard, reactions, and
+edge cases (duplicate registration, anon write, non-member read, idempotent join).
+
+## Responsive design
+
+Verified manually at three breakpoints (matching the Sprint 3 spec):
+
+| Width | Layout |
+|---|---|
+| **375px** (mobile) | Sidebar collapses, channel column hidden on dashboard, dashboard tiles stack to 1 column, channel feed stays scrollable |
+| **768px** (tablet) | Sidebar visible, dashboard tiles → 2 columns, leaderboard rail moves below the feed |
+| **1920px** (desktop) | Full sidebar + channel column, dashboard tiles → 4-column bento, leaderboard rail at 320px |
+
+Key responsive components:
+- `ActivityHeatmap` uses `aspectRatio: 53/7` + `1fr` columns → fits any container
+- Dashboard stats grid: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]`
+- Channel page: `lg:flex` for the right rail, single column below `lg`
+- Auth pages: split-screen on `lg+`, single column on mobile
 
 ## Environment
 

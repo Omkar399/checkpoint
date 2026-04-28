@@ -3,14 +3,15 @@
 import { CircleCheckIcon, NotebookPenIcon, ListChecksIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ReactionBar } from "@/components/reaction-bar";
-import { cn } from "@/lib/utils";
-import type { ChannelKind, CheckIn } from "@/lib/api/types";
+import { cn, parseTs } from "@/lib/utils";
+import { normalizeChannelItem } from "@/lib/api/types";
+import type { ChannelItem, ChannelKind, CheckIn } from "@/lib/api/types";
 
 interface CheckInCardProps {
   checkin: CheckIn;
   kind?: ChannelKind;
   targetUnit?: string | null;
-  channelItems?: string[] | null;
+  channelItems?: ChannelItem[] | null;
   onToggleReaction: (checkinId: number, emoji: string, reactedByMe: boolean) => void;
   onUserClick?: (userId: number) => void;
 }
@@ -23,9 +24,10 @@ export function CheckInCard({
   onToggleReaction,
   onUserClick,
 }: CheckInCardProps) {
-  const { user, value, note, checked_in_at, reactions, checked_items } = checkin;
+  const { user, value, note, checked_in_at, reactions, checked_items, field_states } = checkin;
+  const normalizedItems = channelItems ? channelItems.map(normalizeChannelItem) : null;
   const initial = user.username.charAt(0).toUpperCase();
-  const time = new Date(checked_in_at).toLocaleTimeString([], {
+  const time = parseTs(checked_in_at).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -122,39 +124,83 @@ export function CheckInCard({
             </div>
           ) : null}
 
-          {kind === "checklist" && checked_items && channelItems ? (
-            <div className="space-y-1.5">
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold tabular-nums leading-none text-foreground">
-                  {checked_items.length}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  / {channelItems.length} done
-                </span>
-              </div>
-              <ul className="space-y-0.5 text-sm">
-                {channelItems.map((item, idx) => {
-                  const done = checked_items.includes(idx);
-                  return (
-                    <li
-                      key={idx}
-                      className={cn(
-                        "flex items-center gap-2",
-                        done ? "text-foreground" : "text-muted-foreground/60",
-                      )}
-                    >
-                      <CircleCheckIcon
-                        className={cn(
-                          "size-3.5 shrink-0",
-                          done ? "text-primary" : "opacity-30",
-                        )}
-                      />
-                      <span className={cn(done ? "" : "line-through opacity-70")}>{item}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+          {kind === "checklist" && normalizedItems ? (
+            (() => {
+              // Build a per-index lookup combining field_states and legacy checked_items
+              type Entry = { checked?: boolean; value?: number };
+              const states = new Map<number, Entry>();
+              if (field_states) {
+                for (const fs of field_states) {
+                  states.set(fs.idx, {
+                    checked: fs.checked ?? undefined,
+                    value: fs.value ?? undefined,
+                  });
+                }
+              }
+              if (checked_items) {
+                for (const idx of checked_items) {
+                  if (!states.has(idx)) states.set(idx, { checked: true });
+                }
+              }
+              const interactedCount = Array.from(states.values()).filter(
+                (e) => e.checked === true || e.value !== undefined,
+              ).length;
+              return (
+                <div className="space-y-1.5">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold tabular-nums leading-none text-foreground">
+                      {interactedCount}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      / {normalizedItems.length} done
+                    </span>
+                  </div>
+                  <ul className="space-y-0.5 text-sm">
+                    {normalizedItems.map((item, idx) => {
+                      const entry = states.get(idx);
+                      const isBinary = item.type === "binary";
+                      const filled = isBinary
+                        ? entry?.checked === true
+                        : entry?.value !== undefined;
+                      return (
+                        <li
+                          key={idx}
+                          className={cn(
+                            "flex items-center gap-2",
+                            filled ? "text-foreground" : "text-muted-foreground/60",
+                          )}
+                        >
+                          <CircleCheckIcon
+                            className={cn(
+                              "size-3.5 shrink-0",
+                              filled ? "text-primary" : "opacity-30",
+                            )}
+                          />
+                          <span
+                            className={cn(
+                              "flex-1",
+                              filled ? "" : "line-through opacity-70",
+                            )}
+                          >
+                            {item.label}
+                          </span>
+                          {!isBinary && entry?.value !== undefined ? (
+                            <span className="shrink-0 text-xs font-bold tabular-nums text-foreground">
+                              {entry.value}
+                              {item.unit ? (
+                                <span className="ml-1 font-normal text-muted-foreground">
+                                  {item.unit}
+                                </span>
+                              ) : null}
+                            </span>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })()
           ) : null}
 
           {note ? <p className="text-sm text-muted-foreground">{note}</p> : null}
