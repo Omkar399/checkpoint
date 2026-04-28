@@ -15,8 +15,22 @@ def create_channel(
     target_label: str | None,
     created_by: int,
     kind: str = "numeric",
-    items: list[str] | None = None,
+    items: list | None = None,
 ) -> Channel:
+    # Normalize items so they're plain JSON: strings stay as strings,
+    # Pydantic models (ChannelFieldItem) get dumped to plain dicts. This lets
+    # the schema accept Union[str, ChannelFieldItem] without breaking json.dumps.
+    serialized_items = None
+    if items:
+        serialized = []
+        for it in items:
+            if hasattr(it, "model_dump"):
+                serialized.append(it.model_dump(exclude_none=True))
+            elif isinstance(it, dict):
+                serialized.append(it)
+            else:
+                serialized.append(str(it))
+        serialized_items = json.dumps(serialized)
     channel = Channel(
         server_id=server_id,
         name=name,
@@ -24,7 +38,7 @@ def create_channel(
         target_unit=target_unit,
         target_label=target_label,
         kind=kind,
-        items=json.dumps(items) if items else None,
+        items=serialized_items,
         created_by=created_by,
     )
     db.add(channel)

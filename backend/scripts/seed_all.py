@@ -50,17 +50,17 @@ REACTIONS_POOL = ["🔥", "💪", "🎉", "👏", "🚀", "✅"]
 
 
 COACH_DAILY_TEMPLATES = [
-    "📊 Daily check-in for {server}: {done}/{total} members in yesterday. Top streak: {top} ({streak} days). Keep showing up.",
-    "📊 {done}/{total} checked in yesterday. {top} is on a {streak}-day run — the rest of you, that's the bar.",
-    "📊 {server} report: {done} of {total} on the board yesterday. Streaks compound. Don't break the chain.",
-    "📊 Yesterday in {server}: {done}/{total} active. {top}'s {streak}-day streak is doing the talking.",
-    "📊 {done}/{total} checked in. Whoever didn't — today is a fresh entry. Streaks are forgiving once.",
+    "📊 #{channel} yesterday: {done}/{total} members in. Top streak: {top} ({streak} days). Keep showing up.",
+    "📊 #{channel} — {done}/{total} checked in. {top} is on a {streak}-day run — the rest of you, that's the bar.",
+    "📊 Daily summary for #{channel}: {done} of {total} on the board yesterday. Streaks compound.",
+    "📊 #{channel} ({server}) — {done}/{total} active yesterday. {top}'s {streak}-day streak is doing the talking.",
+    "📊 #{channel}: {done}/{total} checked in. Whoever didn't — today is a fresh entry.",
 ]
 
 COACH_CLEAN_SWEEP = [
-    "📊 Clean sweep yesterday — all {total} of you in. This is what consistency looks like.",
-    "📊 100% participation in {server}. Note this date.",
-    "📊 Everyone showed up yesterday. {top} leads the streak board at {streak} days.",
+    "📊 Clean sweep in #{channel} yesterday — all {total} of you in. This is what consistency looks like.",
+    "📊 100% participation in #{channel}. Note this date.",
+    "📊 #{channel}: everyone showed up yesterday. {top} leads the streak board at {streak} days.",
 ]
 
 COACH_NUDGE_TEMPLATES = [
@@ -603,10 +603,12 @@ def seed_coach_messages(
     bot_user: User,
     members: list[User],
     days: int = 14,
+    include_welcome: bool = False,
 ):
-    """Seed realistic Coach Bot output into a server's first channel.
+    """Seed realistic Coach Bot output into the given channel.
 
     Idempotent: skips if Coach Bot already has 5+ messages in this channel.
+    Pass include_welcome=True for the server's first channel only.
     """
     bot_msg_count = (
         db.query(Message)
@@ -618,8 +620,8 @@ def seed_coach_messages(
 
     today = midnight_utc(datetime.now(timezone.utc))
 
-    # 1) A welcome message from when the most-recently-seeded member joined.
-    if members:
+    # 1) A welcome message — only on the server's primary (first) channel.
+    if include_welcome and members:
         joiner = members[0]  # arbitrary peer
         welcome_ts = today - timedelta(days=days, hours=random.randint(8, 14))
         tpl = random.choice(COACH_WELCOME_TEMPLATES)
@@ -637,7 +639,7 @@ def seed_coach_messages(
     summary_offset = days - 1
     while summary_offset >= 1:
         ts = today - timedelta(days=summary_offset)
-        ts = ts.replace(hour=9, minute=random.randint(0, 5), second=0)
+        ts = ts.replace(hour=21, minute=random.randint(0, 5), second=0)
         # Sample numbers
         total = max(1, len(members) + 1)  # include owner
         done = random.randint(max(1, total - 2), total)
@@ -645,13 +647,18 @@ def seed_coach_messages(
         streak = random.randint(5, 35)
         if done == total and random.random() < 0.5:
             content = random.choice(COACH_CLEAN_SWEEP).format(
-                total=total, server=server.name, top=top.username if top else "you", streak=streak
+                total=total,
+                server=server.name,
+                channel=channel.name,
+                top=top.username if top else "you",
+                streak=streak,
             )
         else:
             content = random.choice(COACH_DAILY_TEMPLATES).format(
                 done=done,
                 total=total,
                 server=server.name,
+                channel=channel.name,
                 top=top.username if top else "someone",
                 streak=streak,
             )
@@ -744,10 +751,12 @@ def main():
             db.commit()
 
             first_channel: Channel | None = None
+            seeded_channels: list[Channel] = []
             for ch_spec in spec["channels"]:
                 channel = upsert_channel(db, server, ch_spec, creator=owner)
                 if first_channel is None:
                     first_channel = channel
+                seeded_channels.append(channel)
                 ensure_channel_member(db, owner.id, channel.id)
                 for uname in spec.get("members", []):
                     if uname in users_by_username:
@@ -780,25 +789,26 @@ def main():
 
                 print(f"  • #{channel.name} ({channel.kind}): {len(channel_checkin_ids)} check-ins")
 
-            # Coach Bot summaries + nudges go to each server's first channel
-            if first_channel is not None:
+            # Coach Bot summaries + nudges + welcome into EVERY channel.
+            for ch in seeded_channels:
                 seed_coach_messages(
                     db,
                     server=server,
-                    channel=first_channel,
+                    channel=ch,
                     bot_user=bot_user,
                     members=peer_users,
+                    include_welcome=True,
                 )
                 db.commit()
                 bot_count = (
                     db.query(Message)
                     .filter(
-                        Message.channel_id == first_channel.id,
+                        Message.channel_id == ch.id,
                         Message.user_id == bot_user.id,
                     )
                     .count()
                 )
-                print(f"  • #{first_channel.name}: {bot_count} Coach Bot messages")
+                print(f"  • #{ch.name}: {bot_count} Coach Bot messages")
 
         print()
         print("Done.")
