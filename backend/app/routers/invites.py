@@ -5,7 +5,7 @@ from app.dependencies import get_db, get_current_user
 from app.models.user import User
 from app.schemas.invite import CreateInviteRequest, InviteResponse
 from app.schemas.server import ServerResponse
-from app.services import invite_service, server_service
+from app.services import coachbot_service, invite_service, server_service
 
 router = APIRouter(prefix="/api/v1", tags=["invites"])
 
@@ -64,4 +64,5 @@ def join_via_invite(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid, expired, or maxed-out invite",
         )
+    coachbot_service.send_welcome_message(db, user=current_user, server=server)
     return server

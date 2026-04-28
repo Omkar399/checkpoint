@@ -44,20 +44,31 @@ def send_bot_message(db: Session, channel_id: int, content: str) -> Message:
     return msg
 
 
-def send_welcome_message(db: Session, server_id: int, username: str) -> list[Message]:
-    channels = (
-        db.query(Channel).filter(Channel.server_id == server_id).all()
-    )
-    messages = []
-    content = (
-        f"Welcome to the server, **{username}**! "
-        f"I'm your Coach Bot. I'll help keep everyone accountable. "
-        f"Join a channel and start checking in to build your streak!"
-    )
-    for channel in channels[:1]:  # Post to first channel only
-        msg = send_bot_message(db, channel.id, content)
-        messages.append(msg)
-    return messages
+def send_welcome_message(db: Session, *, user, server) -> None:
+    """Post a welcome message to the server's first channel for the new joiner.
+
+    Picks the oldest channel by created_at. Skips silently if there are no
+    channels yet. Failures are swallowed (logged via print) so a flaky welcome
+    can't block the join.
+    """
+    try:
+        first_channel = (
+            db.query(Channel)
+            .filter(Channel.server_id == server.id)
+            .order_by(Channel.created_at.asc())
+            .first()
+        )
+        if first_channel is None:
+            return
+
+        content = (
+            f"Welcome @{user.username} - happy to have you in {server.name}. "
+            f"Pick a channel and log your first check-in. "
+            f"Streaks start with one entry."
+        )
+        send_bot_message(db, first_channel.id, content)
+    except Exception as exc:
+        print(f"[coachbot] welcome message failed: {exc}")
 
 
 def generate_daily_summary(db: Session, server_id: int) -> list[Message]:

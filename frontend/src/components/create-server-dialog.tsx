@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent, type ReactNode } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -48,10 +49,11 @@ export function CreateServerDialog({ onCreated, trigger }: CreateServerDialogPro
     try {
       const res = await createServer(trimmed, description.trim() || null);
       onCreated?.(res.data);
+      toast.success("Server created.");
       setOpen(false);
       reset();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create server.");
+      toast.error(err instanceof Error ? err.message : "Failed to create server.");
     } finally {
       setSubmitting(false);
     }

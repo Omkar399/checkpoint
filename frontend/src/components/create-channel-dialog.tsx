@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import { HashIcon, CheckCircle2Icon, NotebookPenIcon, ListChecksIcon, PlusIcon, XIcon } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -121,10 +122,11 @@ export function CreateChannelDialog({ serverId, onCreated, trigger }: CreateChan
         items: cleanedItems,
       });
       onCreated?.(res.data);
+      toast.success("Channel created.");
       setOpen(false);
       reset();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create channel.");
+      toast.error(err instanceof Error ? err.message : "Failed to create channel.");
     } finally {
       setSubmitting(false);
     }

@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Loader2Icon, TrophyIcon } from "lucide-react";
+import { TrophyIcon } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   Avatar,
@@ -15,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getLeaderboard } from "@/lib/api/leaderboard";
 import type { LeaderboardRow } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -68,12 +70,10 @@ export function LeaderboardPanel({
 
   const [rows, setRows] = React.useState<LeaderboardRow[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    setError(null);
 
     getLeaderboard(channelId, month, year)
       .then((res) => {
@@ -82,7 +82,8 @@ export function LeaderboardPanel({
       })
       .catch(() => {
         if (cancelled) return;
-        setError("Failed to load leaderboard.");
+        setRows([]);
+        toast.error("Failed to load leaderboard.");
       })
       .finally(() => {
         if (cancelled) return;
@@ -107,12 +108,19 @@ export function LeaderboardPanel({
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="flex items-center justify-center py-6 text-muted-foreground">
-            <Loader2Icon className="mr-2 size-4 animate-spin" />
-            <span className="text-sm">Loading...</span>
-          </div>
-        ) : error ? (
-          <p className="py-4 text-center text-sm text-destructive">{error}</p>
+          <ol className="flex flex-col" aria-label="Loading leaderboard">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <li
+                key={idx}
+                className="flex items-center gap-3 rounded-md px-3 py-2"
+              >
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="size-7 rounded-full" />
+                <Skeleton className="h-4 flex-1 max-w-[140px]" />
+                <Skeleton className="h-4 w-6" />
+              </li>
+            ))}
+          </ol>
         ) : rows.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
             No check-ins this month yet.

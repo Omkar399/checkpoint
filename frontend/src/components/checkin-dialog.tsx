@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { CheckCircle2Icon, ListChecksIcon } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -119,7 +120,7 @@ export function CheckInDialog({
       reset();
       setOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to record check-in.");
+      toast.error(err instanceof Error ? err.message : "Failed to record check-in.");
     } finally {
       setSubmitting(false);
     }

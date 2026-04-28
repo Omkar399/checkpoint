@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -43,7 +44,7 @@ export function InviteDialog({ serverId, trigger }: InviteDialogProps) {
       const res = await getInvites(serverId);
       setInvites(res.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load invites.");
+      toast.error(err instanceof Error ? err.message : "Failed to load invites.");
     } finally {
       setLoading(false);
     }
@@ -86,9 +87,10 @@ export function InviteDialog({ serverId, trigger }: InviteDialogProps) {
       await createInvite(serverId, payload);
       setMaxUses("");
       setExpiresInHours("");
+      toast.success("Invite created.");
       await fetchInvites();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create invite.");
+      toast.error(err instanceof Error ? err.message : "Failed to create invite.");
     } finally {
       setCreating(false);
     }
@@ -99,9 +101,10 @@ export function InviteDialog({ serverId, trigger }: InviteDialogProps) {
     try {
       await navigator.clipboard.writeText(url);
       setCopiedCode(code);
+      toast.success("Link copied.");
       setTimeout(() => setCopiedCode((prev) => (prev === code ? null : prev)), 1500);
     } catch {
-      setError("Couldn't copy to clipboard.");
+      toast.error("Couldn't copy to clipboard.");
     }
   }
 

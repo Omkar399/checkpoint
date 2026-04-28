@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FlameIcon, ZapIcon, CalendarCheck2Icon, Users2Icon } from "lucide-react";
 import { getServers } from "@/lib/api/servers";
 import { getUserHeatmap, getMyToday } from "@/lib/api/users";
 import { useAuth } from "@/providers/auth-provider";
 import { computeStats, computeWeekPulse, type ComputedStats } from "@/lib/stats";
-import { computeCoachQuote } from "@/lib/coach";
+import { computeCoachQuote, poolSizeForInputs } from "@/lib/coach";
 import { CoachQuoteCard } from "@/components/coach-quote";
 import { TodayChecklist } from "@/components/today-checklist";
 import { WeekPulse } from "@/components/week-pulse";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { WeekDayPulse } from "@/lib/stats";
 import type { TodayChannelEntry } from "@/lib/api/types";
 
@@ -112,18 +113,93 @@ export function DashboardStatsHero({ fallbackName }: DashboardStatsHeroProps) {
 
   const name = user?.username ?? fallbackName ?? "friend";
 
-  const coachQuote = useMemo(() => {
+  const [quoteOffset, setQuoteOffset] = useState(0);
+
+  const coachInputs = useMemo(() => {
     if (today === null || stats === null) return null;
     const doneCount = today.filter((t) => t.checked_in).length;
-    return computeCoachQuote({
+    return {
       pendingCount: today.length - doneCount,
       doneCount,
       totalToday: today.length,
       currentStreak: stats.currentStreak,
       bestStreak: stats.bestStreak,
       hourOfDay: new Date().getHours(),
-    });
+    };
   }, [today, stats]);
+
+  const coachQuote = useMemo(() => {
+    if (!coachInputs) return null;
+    return computeCoachQuote(coachInputs, quoteOffset);
+  }, [coachInputs, quoteOffset]);
+
+  const coachPoolSize = coachInputs ? poolSizeForInputs(coachInputs) : 0;
+  const cycleQuote = useCallback(() => setQuoteOffset((o) => o + 1), []);
+
+  if (stats === null && today === null) {
+    return (
+      <section className="space-y-6" aria-busy="true" aria-label="Loading dashboard">
+        {/* Greeting skeleton */}
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-9 w-56" />
+        </div>
+
+        {/* Coach card skeleton */}
+        <Skeleton className="h-20 w-full rounded-lg" />
+
+        {/* Today panel skeleton — ring + rows */}
+        <div className="rounded-lg bg-card p-5">
+          <div className="grid gap-6 sm:grid-cols-[auto_1fr] sm:items-start">
+            <Skeleton className="size-24 rounded-full" />
+            <div className="flex flex-col gap-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-12" />
+              </div>
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <div key={idx} className="flex items-center gap-3 rounded-md px-2.5 py-2">
+                    <Skeleton className="size-2 rounded-full" />
+                    <Skeleton className="size-3.5" />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <Skeleton className="h-3.5 w-32" />
+                      <Skeleton className="h-2.5 w-20" />
+                    </div>
+                    <Skeleton className="size-4" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats bento skeleton */}
+        <div className="space-y-3">
+          <Skeleton className="h-3 w-24" />
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
+            <Skeleton className="h-[160px] rounded-lg" />
+            <Skeleton className="h-[120px] rounded-lg" />
+            <Skeleton className="h-[120px] rounded-lg" />
+            <Skeleton className="h-[120px] rounded-lg" />
+          </div>
+        </div>
+
+        {/* Week pulse strip skeleton */}
+        <div className="rounded-lg bg-card p-5">
+          <div className="mb-3 flex items-baseline justify-between">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+          <div className="flex items-end gap-2">
+            {Array.from({ length: 7 }).map((_, idx) => (
+              <Skeleton key={idx} className="h-12 flex-1 rounded" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-6">
@@ -138,7 +214,13 @@ export function DashboardStatsHero({ fallbackName }: DashboardStatsHeroProps) {
       </div>
 
       {/* Coach motivation */}
-      {coachQuote ? <CoachQuoteCard quote={coachQuote} /> : null}
+      {coachQuote ? (
+        <CoachQuoteCard
+          quote={coachQuote}
+          poolSize={coachPoolSize}
+          onCycle={cycleQuote}
+        />
+      ) : null}
 
       {/* Today's check-ins — the main to-do */}
       {today ? <TodayChecklist entries={today} /> : null}

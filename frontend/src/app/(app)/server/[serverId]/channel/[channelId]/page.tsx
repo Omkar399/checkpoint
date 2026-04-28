@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useParams } from "next/navigation";
 import { CircleCheckIcon } from "lucide-react";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getChannel, joinChannel } from "@/lib/api/channels";
 import { getMessages } from "@/lib/api/messages";
 import { getCheckins, getDashboard, getStreak, createCheckin } from "@/lib/api/checkins";
@@ -71,7 +73,6 @@ export default function ChannelPage() {
   const [checkins, setCheckins] = useState<CheckInFeedItem[]>([]);
   const [dashboard, setDashboard] = useState<DailyStatusEntry[]>([]);
   const [streak, setStreak] = useState<number>(0);
-  const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [profileUserId, setProfileUserId] = useState<number | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -113,8 +114,8 @@ export default function ChannelPage() {
           cis.data.map((c) => ({ ...c, message_type: "checkin" as const, checkin_id: c.id })),
         );
         setStreak(streakRes.data.streak);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load channel.");
+      } catch {
+        if (!cancelled) toast.error("Failed to load channel.");
       }
     }
     setJoined(false);
@@ -316,6 +317,7 @@ export default function ChannelPage() {
       if (prev.some((c) => c.id === data.id)) return prev;
       return [...prev, { ...data, message_type: "checkin", checkin_id: data.id }];
     });
+    toast.success("Check-in saved.");
   }
 
   async function handleToggleReaction(checkinId: number, emoji: string, reactedByMe: boolean) {
@@ -335,7 +337,7 @@ export default function ChannelPage() {
         await addReaction(checkinId, emoji);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update reaction.");
+      toast.error(err instanceof Error ? err.message : "Failed to update reaction.");
     }
   }
 
@@ -363,9 +365,13 @@ export default function ChannelPage() {
                   Channel
                 </p>
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">
-                    {channel ? `#${channel.name}` : "Loading…"}
-                  </h1>
+                  {channel ? (
+                    <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">
+                      {`#${channel.name}`}
+                    </h1>
+                  ) : (
+                    <Skeleton className="h-7 w-48" />
+                  )}
                   <StreakBadge days={streak} size="sm" />
                 </div>
                 {channel?.description ? (
@@ -382,8 +388,15 @@ export default function ChannelPage() {
                 <span className="uppercase tracking-wider">{statusLabel}</span>
               </span>
             </div>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
             {/* Daily dashboard pills inline in header */}
+            {!channel && dashboard.length === 0 ? (
+              <div className="flex items-center gap-2 py-1.5">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-14 rounded-full" />
+              </div>
+            ) : null}
             {dashboard.length > 0 ? (
               <div className="flex items-center gap-2 overflow-x-auto py-1.5">
                 <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
