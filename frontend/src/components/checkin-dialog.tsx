@@ -119,6 +119,10 @@ export function CheckInDialog({
             setError(`"${item.label}" needs a valid number.`);
             return;
           }
+          if (parsed < 0) {
+            setError(`"${item.label}" can't be negative.`);
+            return;
+          }
           states.push({ idx, value: parsed });
         }
       }
@@ -142,6 +146,10 @@ export function CheckInDialog({
       const parsedValue = trimmedValue === "" ? null : Number(trimmedValue);
       if (parsedValue !== null && Number.isNaN(parsedValue)) {
         setError("Value must be a number.");
+        return;
+      }
+      if (parsedValue !== null && parsedValue < 0) {
+        setError("Value can't be negative.");
         return;
       }
       if (parsedValue === null && trimmedNote === "") {
@@ -292,6 +300,7 @@ export function CheckInDialog({
                           type="number"
                           inputMode="decimal"
                           step="any"
+                          min={0}
                           value={raw}
                           onChange={(e) => setNumericValue(idx, e.target.value)}
                           placeholder={item.unit ? `e.g. 30 ${item.unit}` : "value"}
@@ -338,6 +347,7 @@ export function CheckInDialog({
                 type="number"
                 inputMode="decimal"
                 step="any"
+                min={0}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 placeholder={targetUnit ? `e.g. 30 ${targetUnit}` : "Optional number"}

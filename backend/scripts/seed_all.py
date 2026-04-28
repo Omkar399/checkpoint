@@ -101,6 +101,20 @@ DAA_CHAPTERS = [
 ]
 
 
+# UTC hour buckets that map to realistic local times for common activities.
+# Anchored to a US East Coast viewer (UTC-4) so the displayed local time is
+# plausible. (UTC 10–13 = 6–9 AM EDT, UTC 21–23 = 5–7 PM EDT, etc.)
+TIME_SLOTS = {
+    "morning":               [10, 11, 12, 13],         # 6–9 AM local
+    "early_morning":         [10, 11, 12],             # 6–8 AM local
+    "morning_or_evening":    [10, 11, 12, 21, 22, 23], # 6–8 AM or 5–7 PM
+    "afternoon":             [16, 17, 18, 19],         # 12–3 PM local
+    "afternoon_evening":     [16, 17, 18, 19, 20, 21, 22, 23],  # 12–7 PM
+    "evening":               [21, 22, 23],             # 5–7 PM local
+    "daytime":               [13, 14, 15, 16, 17, 18, 19, 20, 21],  # 9 AM – 5 PM
+}
+
+
 SERVERS = [
     {
         "name": "Run",
@@ -115,6 +129,7 @@ SERVERS = [
                 "target_unit": "km",
                 "target_label": "distance",
                 "items": None,
+                "time_slots": TIME_SLOTS["morning_or_evening"],
                 "profiles": {
                     "demo": {"consistency": 0.75, "value": (4.0, 7.0), "notes": [
                         "Quick lunch run.",
@@ -170,6 +185,7 @@ SERVERS = [
                 "target_unit": "hrs",
                 "target_label": "deep work",
                 "items": None,
+                "time_slots": TIME_SLOTS["daytime"],
                 "profiles": {
                     "demo": {"consistency": 0.7, "value": (1.0, 4.5), "notes": [
                         "Pair-programmed the auth module.",
@@ -203,6 +219,7 @@ SERVERS = [
                 "target_unit": None,
                 "target_label": None,
                 "items": DAA_CHAPTERS,
+                "time_slots": TIME_SLOTS["afternoon_evening"],
                 "profiles": {
                     "demo": {"consistency": 0.8, "checklist_range": (1, 4), "notes": [
                         "DP problems. Got 3 of 5.",
@@ -234,6 +251,7 @@ SERVERS = [
                 "target_unit": "min",
                 "target_label": "focus",
                 "items": None,
+                "time_slots": TIME_SLOTS["morning"],
                 "profiles": {
                     "demo": {"consistency": 0.55, "value": (30, 90), "notes": [
                         "Made it out of bed.",
@@ -268,6 +286,7 @@ SERVERS = [
                 "target_unit": None,
                 "target_label": None,
                 "items": None,
+                "time_slots": TIME_SLOTS["early_morning"],
                 "profiles": {
                     "demo": {"consistency": 0.85, "notes": [
                         "Done. ✅",
@@ -296,6 +315,7 @@ SERVERS = [
                 "target_unit": "min",
                 "target_label": "workout",
                 "items": None,
+                "time_slots": TIME_SLOTS["morning_or_evening"],
                 "profiles": {
                     "demo": {"consistency": 0.6, "value": (30, 70), "notes": [
                         "Push day.",
@@ -325,6 +345,7 @@ SERVERS = [
                 "target_unit": None,
                 "target_label": None,
                 "items": None,
+                "time_slots": TIME_SLOTS["evening"],
                 "profiles": {
                     "demo": {"consistency": 0.45, "notes": [
                         "Long catch up.",
@@ -437,7 +458,18 @@ def midnight_utc(d: datetime) -> datetime:
     return d.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
 
 
-def seed_checkins_for_member(db, channel: Channel, user: User, profile: dict, days: int = 30) -> list[int]:
+DEFAULT_TIME_SLOTS = TIME_SLOTS["daytime"]
+
+
+def seed_checkins_for_member(
+    db,
+    channel: Channel,
+    user: User,
+    profile: dict,
+    days: int = 30,
+    time_slots: list[int] | None = None,
+) -> list[int]:
+    slots = time_slots if time_slots else DEFAULT_TIME_SLOTS
     now = datetime.now(timezone.utc)
     today = midnight_utc(now)
     # Cap "today's" check-in to be at least 2 hours in the past so the demo
@@ -454,13 +486,30 @@ def seed_checkins_for_member(db, channel: Channel, user: User, profile: dict, da
             # entirely rather than generate something newer than today_cap.
             if today_cap <= today:
                 continue
-            # Pick a random moment between today's midnight and 2h-before-now.
-            window_seconds = int((today_cap - today).total_seconds())
-            ts = today + timedelta(seconds=random.randint(60, window_seconds))
+            # Pick a random moment between today's midnight and 2h-before-now,
+            # but only land inside the channel's typical time slots if any of
+            # them have already elapsed today.
+            elapsed_hours = int((today_cap - today).total_seconds() // 3600)
+            elapsed_slots = [h for h in slots if h <= elapsed_hours]
+            if elapsed_slots:
+                ts = today.replace(
+                    hour=random.choice(elapsed_slots),
+                    minute=random.randint(0, 59),
+                    second=random.randint(0, 59),
+                )
+                # Defensive: if it still landed past the cap (shouldn't), shift back
+                if ts > today_cap:
+                    ts = today_cap - timedelta(minutes=random.randint(5, 60))
+            else:
+                # No typical slot has happened yet today — pick anywhere allowable
+                window_seconds = int((today_cap - today).total_seconds())
+                if window_seconds <= 60:
+                    continue
+                ts = today + timedelta(seconds=random.randint(60, window_seconds))
         else:
             ts = today - timedelta(days=offset)
             ts = ts.replace(
-                hour=random.choice([6, 8, 12, 17, 18, 19, 20, 21]),
+                hour=random.choice(slots),
                 minute=random.randint(0, 59),
                 second=random.randint(0, 59),
             )
@@ -712,7 +761,13 @@ def main():
                         continue
                     user = users_by_username[uname]
                     channel_user_ids.append(user.id)
-                    ids = seed_checkins_for_member(db, channel, user, profile)
+                    ids = seed_checkins_for_member(
+                        db,
+                        channel,
+                        user,
+                        profile,
+                        time_slots=ch_spec.get("time_slots"),
+                    )
                     channel_checkin_ids.extend(ids)
                 db.commit()
 

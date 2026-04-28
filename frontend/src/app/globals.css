@@ -205,6 +205,20 @@
   }
 }
 
+/* Hide native number-input spinner buttons — they look ugly inside the
+   pill-shaped Input primitive. Arrow keys still increment/decrement. */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  margin: 0;
+  display: none;
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;

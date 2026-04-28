@@ -17,6 +17,7 @@ import { useWebSocket, type FeedItem, type ReactionEvent } from "@/hooks/use-web
 import { useAuth } from "@/providers/auth-provider";
 import { CheckInCard } from "@/components/checkin-card";
 import { CheckInDialog } from "@/components/checkin-dialog";
+import { CoachMessage } from "@/components/coach-message";
 import { UserProfileDialog } from "@/components/user-profile-dialog";
 import { LeaderboardPanel } from "@/components/leaderboard-panel";
 import { StreakBadge } from "@/components/streak-badge";
@@ -258,7 +259,24 @@ export default function ChannelPage() {
 
   const feed = useMemo(() => {
     if (feedFilter === "all") return fullFeed;
-    return fullFeed.filter((item) => getTimestamp(item) >= todayStart);
+    const todayItems = fullFeed.filter((item) => getTimestamp(item) >= todayStart);
+
+    // Pin the most recent Coach Bot daily summary from BEFORE today at the
+    // top of the today feed so the user always has yesterday's recap as
+    // context — without it the morning view feels empty until check-ins
+    // start rolling in.
+    let pinnedSummary: Message | null = null;
+    for (let i = fullFeed.length - 1; i >= 0; i--) {
+      const item = fullFeed[i];
+      if (!isMessage(item)) continue;
+      if (item.user.username !== "Coach Bot") continue;
+      if (!item.content.includes("📊")) continue; // daily summaries only
+      if (getTimestamp(item) >= todayStart) continue; // skip if it's already today
+      pinnedSummary = item;
+      break;
+    }
+
+    return pinnedSummary ? [pinnedSummary, ...todayItems] : todayItems;
   }, [fullFeed, feedFilter, todayStart]);
 
   const todayCount = useMemo(
@@ -508,6 +526,10 @@ export default function ChannelPage() {
                       onToggleReaction={handleToggleReaction}
                       onUserClick={openProfile}
                     />
+                  </li>
+                ) : item.user.username === "Coach Bot" ? (
+                  <li key={`msg-${item.id}`} className="py-1">
+                    <CoachMessage message={item} />
                   </li>
                 ) : (
                   <li key={`msg-${item.id}`} className="group/row flex items-start gap-3 rounded-md px-2 py-1 hover:bg-[color:var(--color-ink-100)]">
