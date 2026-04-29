@@ -48,24 +48,40 @@ function parseCoach(content: string): ParsedSummary {
   // Daily summary — extract participation and (optional) streak
   if (content.startsWith("📊")) {
     const part: ParsedSummary = { kind: "summary" };
-    const partMatch = content.match(/(\d+)\s*\/\s*(\d+)\s*(?:members|of (?:them|you))/i);
+
+    // Participation: match the FIRST "X/Y" or "X of Y" pair anywhere in the
+    // body. Coach summaries always lead with the participation count, so the
+    // first such match is the right one regardless of phrasing.
+    const partMatch = content.match(/(\d+)\s*(?:\/|of)\s*(\d+)/i);
     if (partMatch) {
       const done = Number(partMatch[1]);
       const total = Number(partMatch[2]);
-      part.participation = {
-        done,
-        total,
-        pct: total > 0 ? Math.round((done / total) * 100) : 0,
-      };
+      // Sanity check: don't render obviously bogus ratios (denominator must
+      // be at least the numerator, and total must be reasonable).
+      if (total >= done && total > 0 && total < 1000) {
+        part.participation = {
+          done,
+          total,
+          pct: Math.round((done / total) * 100),
+        };
+      }
     } else {
-      // "all 3 of you in" / clean sweep
+      // Fallback: "all N of you" / clean-sweep phrasing
       const cleanMatch = content.match(/all\s+(\d+)\s+of\s+you/i);
       if (cleanMatch) {
         const total = Number(cleanMatch[1]);
         part.participation = { done: total, total, pct: 100 };
       }
     }
-    const streakMatch = content.match(/(\w+)\s*\((\d+)\s*days?\)/);
+
+    // Streak: try multiple shapes the templates use, in order of specificity.
+    //   "name (N days)"           → most explicit
+    //   "name's N-day streak"     → possessive shorthand
+    //   "name is on a N-day run"  → narrative form
+    let streakMatch =
+      content.match(/(\w+)\s*\((\d+)\s*days?\)/) ??
+      content.match(/(\w+)['']s\s+(\d+)[-\s]?days?[-\s]?(?:streak|run)?/) ??
+      content.match(/(\w+)\s+(?:is\s+on|leads with)\s+a?\s*(\d+)[-\s]?day/);
     if (streakMatch) {
       part.streak = { user: streakMatch[1], days: Number(streakMatch[2]) };
     }

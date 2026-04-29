@@ -61,14 +61,27 @@ def get_channel(db: Session, channel_id: int) -> Channel | None:
 
 
 def join_channel(db: Session, user_id: int, channel_id: int) -> ChannelMember:
+    """Idempotent join. Returns the membership row regardless of whether it
+    was just created or already existed. Use `join_channel_with_status` if
+    you need to know."""
+    member, _ = join_channel_with_status(db, user_id, channel_id)
+    return member
+
+
+def join_channel_with_status(
+    db: Session, user_id: int, channel_id: int
+) -> tuple[ChannelMember, bool]:
+    """Idempotent join that also reports whether this was a fresh join.
+    Returns (membership, is_new). Callers can use is_new to fire welcome
+    side-effects only on the first join."""
     existing = check_channel_membership(db, user_id, channel_id)
     if existing is not None:
-        return existing
+        return existing, False
     member = ChannelMember(user_id=user_id, channel_id=channel_id)
     db.add(member)
     db.commit()
     db.refresh(member)
-    return member
+    return member, True
 
 
 def leave_channel(db: Session, user_id: int, channel_id: int) -> bool:

@@ -71,6 +71,24 @@ def send_welcome_message(db: Session, *, user, server) -> None:
         print(f"[coachbot] welcome message failed: {exc}")
 
 
+def send_channel_welcome_message(db: Session, *, user, channel) -> None:
+    """Post a welcome message in a specific channel when a user joins it for
+    the first time. Fires from the channel-join hook (REST endpoint that the
+    frontend hits on channel-page mount).
+
+    Failures are swallowed so a flaky bot can't block the join.
+    """
+    try:
+        content = (
+            f"Welcome @{user.username} to #{channel.name}. "
+            f"Log your first check-in here when you're ready - "
+            f"streaks start with one entry."
+        )
+        send_bot_message(db, channel.id, content)
+    except Exception as exc:
+        print(f"[coachbot] channel welcome failed: {exc}")
+
+
 def generate_daily_summary(db: Session, server_id: int) -> list[Message]:
     yesterday = datetime.now(timezone.utc).date() - timedelta(days=1)
     start = datetime.combine(yesterday, datetime.min.time())

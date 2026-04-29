@@ -623,7 +623,9 @@ export default function ChannelPage() {
             <WeekPulse data={pulse} />
           </div>
         ) : null}
-        <LeaderboardPanel channelId={channelId} />
+        {/* Defer leaderboard until auto-join completes — otherwise the
+            membership-gated /leaderboard endpoint can race the join and 403. */}
+        {joined ? <LeaderboardPanel channelId={channelId} /> : null}
       </aside>
 
       <UserProfileDialog

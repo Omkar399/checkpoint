@@ -51,16 +51,16 @@ REACTIONS_POOL = ["🔥", "💪", "🎉", "👏", "🚀", "✅"]
 
 COACH_DAILY_TEMPLATES = [
     "📊 #{channel} yesterday: {done}/{total} members in. Top streak: {top} ({streak} days). Keep showing up.",
-    "📊 #{channel} — {done}/{total} checked in. {top} is on a {streak}-day run — the rest of you, that's the bar.",
-    "📊 Daily summary for #{channel}: {done} of {total} on the board yesterday. Streaks compound.",
-    "📊 #{channel} ({server}) — {done}/{total} active yesterday. {top}'s {streak}-day streak is doing the talking.",
-    "📊 #{channel}: {done}/{total} checked in. Whoever didn't — today is a fresh entry.",
+    "📊 #{channel} — {done}/{total} members in. {top} ({streak} days) is leading the board.",
+    "📊 Daily summary for #{channel}: {done}/{total} members checked in yesterday. Top: {top} ({streak} days).",
+    "📊 #{channel} — {done}/{total} active. Streak leader: {top} ({streak} days).",
+    "📊 #{channel}: {done}/{total} members in. Whoever skipped — today is a fresh entry.",
 ]
 
 COACH_CLEAN_SWEEP = [
     "📊 Clean sweep in #{channel} yesterday — all {total} of you in. This is what consistency looks like.",
-    "📊 100% participation in #{channel}. Note this date.",
-    "📊 #{channel}: everyone showed up yesterday. {top} leads the streak board at {streak} days.",
+    "📊 100% participation in #{channel}. {top} ({streak} days) leads the streak board.",
+    "📊 #{channel}: everyone showed up yesterday. {top} ({streak} days) at the top.",
 ]
 
 COACH_NUDGE_TEMPLATES = [

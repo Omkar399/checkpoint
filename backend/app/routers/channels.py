@@ -106,7 +106,18 @@ def join_channel(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not a member of this server",
         )
-    cm = channel_service.join_channel(db, current_user.id, channel_id)
+    cm, is_new = channel_service.join_channel_with_status(
+        db, current_user.id, channel_id
+    )
+
+    # First-time join → drop a Coach Bot welcome into THIS channel so the
+    # user sees a greeting the moment they open it (no check-in required).
+    if is_new:
+        from app.services import coachbot_service
+        coachbot_service.send_channel_welcome_message(
+            db, user=current_user, channel=channel
+        )
+
     # Reload with user
     from sqlalchemy.orm import joinedload
     from app.models.channel_member import ChannelMember
